@@ -227,6 +227,7 @@ def main(argv):
     #create the /redfish/v1 root dir and copy output of Get ^/redfish/v1 to index.json file
     rft.printVerbose(1,"Creating /redfish/v1 resource")
     rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rft.rootPath)
+    rootv1data = d
     if(rc!=0):
         rft.printErr("ERROR: Cant read root service:  GET /redfish/ from rhost. aborting")
         sys.exit(1)
@@ -288,40 +289,85 @@ def main(argv):
     #    CreateIndexFile(./res/index.json)     --- read,write to index.json
     #    if(type is collection)
     #        for each member, mkdir, create index.json
+    
+
+    # Commenting this part out. Cause implemented a recursive way to get the redfish data.
+    # rft.printVerbose(1,"Start Creating resources under root service:")
+    # for rlink in rootLinks:
+    #     #rft.printErr("rlink:{}".format(rlink))
+    #     if(rlink in rootRes):
+    #         link=rootRes[rlink]
+    #         rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(rlink))
+    #         rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link)
+    #         if(rc!=0):
+    #             rft.printErr("ERROR: got error reading root service resource--continuing. link: {}".format(link))
+    #         resd=d
+
+    #         # if res type is a collection, then for each member, read res, mkdir, create index file
+    #         if isCollection(resd) is True:  # (eg Systems, Chassis...)
+    #             for member in resd["Members"]:
+    #                 rft.printVerbose(4,"    Collection member: {}".format(member))
+    #                 rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, member)
+    #                 if(rc!=0):
+    #                     rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(member))
+    #                 memberd=d
+    #                 sublinklist=resourceLinks[rlink]
+    #                 rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd)
+    #                 if(rc!=0):
+    #                     rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
+    #         else:   # its not a collection. (eg accountService) do the 2nd level resources now
+    #             sublinklist=resourceLinks[rlink]
+    #             rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd)
+    #             if(rc!=0):
+    #                 rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
+
+    # rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
+
+    # Starting recursive call.
     rft.printVerbose(1,"Start Creating resources under root service:")
-    for rlink in rootLinks:
-        #rft.printErr("rlink:{}".format(rlink))
-        if(rlink in rootRes):
-            link=rootRes[rlink]
-            rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(rlink))
-            rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link)
-            if(rc!=0):
-                rft.printErr("ERROR: got error reading root service resource--continuing. link: {}".format(link))
-            resd=d
-
-            # if res type is a collection, then for each member, read res, mkdir, create index file
-            if isCollection(resd) is True:  # (eg Systems, Chassis...)
-                for member in resd["Members"]:
-                    rft.printVerbose(4,"    Collection member: {}".format(member))
-                    rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, member)
-                    if(rc!=0):
-                        rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(member))
-                    memberd=d
-                    sublinklist=resourceLinks[rlink]
-                    rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd)
-                    if(rc!=0):
-                        rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
-            else:   # its not a collection. (eg accountService) do the 2nd level resources now
-                sublinklist=resourceLinks[rlink]
-                rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd)
-                if(rc!=0):
-                    rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
-
+    recursive_call(rft,rootv1data,rootUrl,mockDir)
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
 
 
+def recursive_call(rft,rs,rootUrl,mockDir):
+    # get_nav_and_collection_properties() method will go and fetch any nav or collection properties if present.
+    # If none returns None. Indicating that there are no further down navigations.
+    d = get_nav_and_collection_properties(rft, rs)
+    if d is not None:
+        for x in d:
+            rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(x))
+            # readResourceMkdirCreateIndxFile() method will create a directory and index.json file for the resource link
+            rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, x)
+            if(rc!=0):
+                rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(x))    
+            # Recursively calling further tree nodes which will fetch data.
+            recursive_call(rft,d,rootUrl,mockDir)
+    else:
+        return (None)
 
+def get_nav_and_collection_properties(rft,rs):    
+    if not isinstance(rs,dict):
+        return (None)
+    nav_list = list()
+    for k,v in rs.items():
+        # Checking if values have keys "@odata.id" only or not.
+        if isinstance(v,list):
+            for x in v:
+                if isinstance(x,dict):
+                    # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+                    if len(x) == 1 and '@odata.id' in x.keys():
+                        nav_list.append(x)
+            
+        elif isinstance(v,dict):
+            # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+            if len(v) == 1 and '@odata.id' in v.keys():
+                nav_list.append(v)
+            
+    if not nav_list:
+        return (None)                   # If the list is empty, it means there are no navigation properties.
+    else:
+        return (nav_list)               # Returns a list of navigation properties, if they are present.
 
 
 def rfMakeDir(rft, dirPath):
