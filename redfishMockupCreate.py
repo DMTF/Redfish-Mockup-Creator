@@ -20,18 +20,21 @@ import datetime
 
 
 # rootservice navigation properties
-rootLinks=["Systems","Chassis", "Managers", "SessionService", "AccountService", "Registries", "JsonSchemas", "Tasks" ]
+rootLinks=["Systems","Chassis", "Managers", "SessionService", "AccountService", "Registries",
+        "JsonSchemas", "Tasks", "EventService", "UpdateService"]
 # list of navigation properties for each root service nav props
 resourceLinks={
         # rootResource: [list of sub-resources],
-        "Systems": [ "Processors", "SimpleStorage", "EthernetInterfaces", "LogServices", "Memory"],
+        "Systems": [ "Processors", "SimpleStorage", "EthernetInterfaces", "LogServices",
+                    "Memory", "NetworkInterfaces", "SecureBoot", "Bios", "PCIeDevices", "MemoryDomains", "Storage"],
         "Chassis": ["Power", "Thermal", "LogServices"],
-        "Managers": ["NetworkProtocol", "EthernetInterfaces", "SerialInterfaces", "LogServices"],
+        "Managers": ["NetworkProtocol", "EthernetInterfaces", "SerialInterfaces", "LogServices", "VirtualMedia"],
         "SessionService": ["Sessions"],
         "AccountService": ["Accounts", "Roles"],
         "Registries": [],
         "JsonSchemas": [],
-        "Tasks": ["Tasks"]
+        "Tasks": ["Tasks"],
+        "EventService": ["Subscriptions"]
 }
 
 
@@ -49,6 +52,7 @@ def displayOptions(rft):
         print("   -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output")
         print("                                       -v ")
         print("   -q,          --quiet             -- quiet mode. no progress messages are displayed")
+        print("   -C,          --custom            -- custom mode. use static over recursive root resource discovery")
         print("   -S,          --Secure            -- use HTTPS for all gets.   otherwise HTTP is used")
         print("   -u <user>,   --user=<usernm>     -- username used for remote redfish authentication")
         print("   -p <passwd>, --password=<passwd> -- password used for remote redfish authentication")
@@ -107,8 +111,8 @@ def main(argv):
     rfFile="index.json"
     
     try:
-        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSu:p:r:A:D:d:",
-                        ["Version", "help", "quiet", "Secure=",
+        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSu:p:r:A:D:d:C",
+                        ["Version", "help", "quiet", "Secure=", "Custom",
                          "user=", "password=", "rhost=","Auth=","Dir=, description=]"])
     except getopt.GetoptError:
         rft.printErr("Error parsing options")
@@ -140,6 +144,8 @@ def main(argv):
             rft.secure="Always"
         elif opt in ("-q", "--quiet"):
             rft.quiet=true
+        elif opt in ("-C", "--custom"):
+            rft.custom=True
         elif opt in ("-A", "--Auth"):           # specify authentication type
             rft.auth=arg
             if not rft.auth in rft.authValidValues:
@@ -291,41 +297,43 @@ def main(argv):
     #        for each member, mkdir, create index.json
     
 
-    # Commenting this part out. Cause implemented a recursive way to get the redfish data.
-    # rft.printVerbose(1,"Start Creating resources under root service:")
-    # for rlink in rootLinks:
-    #     #rft.printErr("rlink:{}".format(rlink))
-    #     if(rlink in rootRes):
-    #         link=rootRes[rlink]
-    #         rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(rlink))
-    #         rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link)
-    #         if(rc!=0):
-    #             rft.printErr("ERROR: got error reading root service resource--continuing. link: {}".format(link))
-    #         resd=d
 
-    #         # if res type is a collection, then for each member, read res, mkdir, create index file
-    #         if isCollection(resd) is True:  # (eg Systems, Chassis...)
-    #             for member in resd["Members"]:
-    #                 rft.printVerbose(4,"    Collection member: {}".format(member))
-    #                 rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, member)
-    #                 if(rc!=0):
-    #                     rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(member))
-    #                 memberd=d
-    #                 sublinklist=resourceLinks[rlink]
-    #                 rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd)
-    #                 if(rc!=0):
-    #                     rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
-    #         else:   # its not a collection. (eg accountService) do the 2nd level resources now
-    #             sublinklist=resourceLinks[rlink]
-    #             rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd)
-    #             if(rc!=0):
-    #                 rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
-
-    # rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
-
-    # Starting recursive call.
     rft.printVerbose(1,"Start Creating resources under root service:")
-    recursive_call(rft,rootv1data,rootUrl,mockDir)
+
+    # If we specified "Custom" in optargs then run static discovery of resources
+    if( rft.custom is True):
+        rft.printVerbose("Custom discovery of resources under root service specified")
+
+        for rlink in rootLinks:
+            #rft.printErr("rlink:{}".format(rlink))
+            if(rlink in rootRes):
+                link=rootRes[rlink]
+                rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(rlink))
+                rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link)
+                if(rc!=0):
+                    rft.printErr("ERROR: got error reading root service resource--continuing. link: {}".format(link))
+                resd=d
+                # if res type is a collection, then for each member, read res, mkdir, create index file
+                if isCollection(resd) is True:  # (eg Systems, Chassis...)
+                    for member in resd["Members"]:
+                        rft.printVerbose(4,"    Collection member: {}".format(member))
+                        rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, member)
+                        if(rc!=0):
+                            rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(member))
+                        memberd=d
+                        sublinklist=resourceLinks[rlink]
+                        rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd)
+                        if(rc!=0):
+                            rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
+                else:   # its not a collection. (eg accountService) do the 2nd level resources now
+                    sublinklist=resourceLinks[rlink]
+                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd)
+                    if(rc!=0):
+                        rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
+    else:
+        # Starting recursive call.
+        recursive_call(rft,rootv1data,rootUrl,mockDir)
+
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
 

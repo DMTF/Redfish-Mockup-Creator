@@ -84,6 +84,7 @@ class RfTransport():
         self.quiet=False
         self.user=""
         self.password=""
+        self.custom=False
         self.rhost=None
         self.token=None
         self.protocolVer="Latest"
