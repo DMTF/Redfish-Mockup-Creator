@@ -1,9 +1,9 @@
 # Copyright Notice:
 # Copyright 2016 Distributed Management Task Force, Inc. All rights reserved.
-# License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-Mockup-Creator/LICENSE.md
+# License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfishtool/LICENSE.md
 
 # redfishtool: ServiceRoot.py
-# v0.9.1 with transport import commented out
+# v0.9.2
 # contains serviceRoot related subCommands and access functions
 # Class RfServiceRoot
 #  - getServiceRoot   GET /redfish/v1
@@ -36,7 +36,7 @@ class RfServiceRoot:
         if cmdTop is True:  prop=rft.prop
 
         # get root service.  if -P prop, showproperty
-        rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rft.rootPath,prop=prop)
+        rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', rft.rootUri, relPath=rft.rootPath,prop=prop)
 
         #save the rootService response.  The transport may need it later to get link to session and login
         rft.rootResponseDict=d
@@ -59,8 +59,8 @@ class RfServiceRoot:
 
         #calculate relative path = rootPath / odata
         rpath=urljoin(rft.rootPath, "odata")
-
-        rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rpath)
+        
+        rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', rft.rootUri, relPath=rpath)
         if(rc==0 ):
             rft.printVerbose(1," Odata Service Document:",skip1=True, printV12=cmdTop)
         return(rc,r,j,d)
@@ -85,7 +85,7 @@ class RfServiceRoot:
         hdrs = {"Accept": "application/xml", "OData-Version": "4.0" }
 
 
-        rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rpath, jsonData=False, headersInput=hdrs )
+        rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', rft.rootUri, relPath=rpath, jsonData=False, headersInput=hdrs )
         if(rc==0):
             rft.printVerbose(1," Odata Metadata Document:",skip1=True,printV12=cmdTop)
         return(rc,r,j,d)
@@ -94,9 +94,5 @@ class RfServiceRoot:
 TODO:
 1.
 
-CHANGELOG:
-v0.9 --initial
-v0.9.1 -- getOdataMetadataDocument(): changed hdrs to Accept: application/xml,  OData-Version: 4.0
-          old value was content-type application/xml.  we want the response xml, so it should be Accept
 
 '''

@@ -1,9 +1,9 @@
 # Copyright Notice:
 # Copyright 2016 Distributed Management Task Force, Inc. All rights reserved.
-# License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-Mockup-Creator/LICENSE.md
+# License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfishtool/LICENSE.md
 
 # redfishtool:  redfishtoolTransport.py
-# v0.9.1
+# v0.9.2
 # Contents:
 # 1. Class RfSessionAuth --  holds auto-created session Auth info.  'requests' calls to get credentials
 # 2. Class RfTransport -- has the generic functions to send/receive http requests, generic print functions, etc  
@@ -55,14 +55,18 @@ class RfSessionAuth(AuthBase):
         #print("Call SESSION AUTH")
         return(r)
 
+#xxx
+#redfishtoolTransport.py:        self.program="RMredfishtool"              # program name (in case we want to change it (_RM_)
+#redfishtoolTransport.py:        self.rhost="127.0.0.1"   # (_RM_)
+#xxx
 
 class RfTransport():
     def __init__(self):
         # constant parameters-- these dont change and are not updated
-        self.program="redfishMockupCreate"              # program name (in case we want to change it
-        self.version="0.9.1"                    # this redfishtool version
-        self.releaseDate="05/28/2016"           # release date for this version of redfishtool
-        self.downloadFrom="https://github.com/DMTF/spmf-tools/redfishtool" # where to find redfishtool
+        self.program="RMredfishtool"              # program name (in case we want to change it (_xgRM_)
+        self.version="0.9.2"                    # this redfishtool version
+        self.releaseDate="12/05/2016"           # release date for this version of redfishtool
+        self.downloadFrom="https://github.com/DMTF/Redfishtool" # where to find redfishtool
         self.magic="12345"                      # used for debug to test for a known parameter in this object
         self.UNAUTHENTICATED_API=1              # unauthenticated API that doesn't send credentials in body data
         self.AUTHENTICATED_API=2                # authenticated API that doesn't send credentials in body data
@@ -84,12 +88,12 @@ class RfTransport():
         self.quiet=False
         self.user=""
         self.password=""
-        self.custom=False
-        self.rhost=None
+        self.rhost="127.0.0.1:5001" # (_xgRM_)
         self.token=None
-        self.protocolVer="Latest"
+        self.protocolVer="v1"
         self.auth="Basic"  # or "Session" using Basic as default now
         self.timeout=10         # http transport timeout in seconds, stored as int here
+        self.checkProtocolVer=False  # if -C option, then we need to check/verify the protocol ver. dflt=false
 
         # more option parsing variables
         self.prop=None
@@ -118,8 +122,8 @@ class RfTransport():
         
         self.Link=None   # -L <Link> or --Link=<link>
         self.configFile=""      
-        self.secure="Never" #Never
-        #self.secure="IfSendingCredentials" #Never
+        #self.secure="IfLoginOrAuthenticatedApi" #Never
+        self.secure="Never" # (_xgRM_) RM doesn't require
         self.waitTime=3
         self.waitNum=1
         self.headers=None
@@ -174,7 +178,7 @@ class RfTransport():
             #print("else HTTP dflt")
         return(scheme)  #return ok
             
-    def getVersionsAndSetRootPath(self,rft):
+    def getVersionsAndSetRootPath(self,rft,forceCheckProtocolVer=False):
         # Read the Redfish Versions API (/redfish) to determine which protocol versions the service supports
         # The proper ServiceRoot Path returned for each protocol version eg:  { "v1": "/redfish/v1" }.
         # If self.redfishProtocolVersion="Latest" (which is the default), we will select the latest version
@@ -200,6 +204,26 @@ class RfTransport():
         if( rft.rhost is None):
             rft.printErr("Transport: -r rHost was not specified and is required by this command. aborting")
             return(5,None,False,None)
+
+        # if the checkProtocol flag is not set true, dont query rhost for /redfish version
+        # just use what was passed in with -R <redfishVersion> or the default "v1"
+        if( (rft.checkProtocolVer is False) and (forceCheckProtocolVer is not True) ):
+            # If here, checkProtocolVer is false.  we will generate the rootURL and hope for the best
+            # This saves additional Get /redfish query that 99.9% of time is ok
+            # the Get Versions API (GET /redfish) calls the routine with forceCheckProtocolVer=True
+            rft.rootPath=urljoin("/redfish/", (rft.protocolVer + "/") )
+            #id of protocolVersion is v1, rft.rootPath="/redfish/v1/"
+
+            # calculate the rootUri including scheme,rhost,rootPath properly
+            scheme=rft.getApiScheme(rft.UNAUTHENTICATED_API)
+            scheme_tuple=[scheme,rft.rhost, rft.rootPath, "","",""]
+            rootUrl=urlunparse(scheme_tuple)
+            rft.rootUri=rootUrl
+            # save parameters
+            rft.rhostSupportedVersions=None
+            rft.versionToUse=rft.protocolVer
+            rft.printVerbose(5,"Transport.getRootPath: protocolVer to use={},  rootPath={}".format(rft.versionToUse, rft.rootPath))
+            return(0,None,False,None) # return ok
 
         # create scheme based on input parameters and apiType(set here) using setApiScheme() function above.
         scheme=rft.getApiScheme(rft.UNAUTHENTICATED_API)
@@ -566,7 +590,7 @@ class RfTransport():
         if(rft.help):
             print(" {} versions | redfish [-vh]   -- get redfishProtocol versions supported by rhost".format(rft.program))
             return(0,None,False,None)
-        rc,r,j,d=rft.getVersionsAndSetRootPath(rft)
+        rc,r,j,d=rft.getVersionsAndSetRootPath(rft, forceCheckProtocolVer=True)
         if(rc != 0):
             return(rc,None,False,None)
 
@@ -725,6 +749,7 @@ class RfTransport():
             print("#STATUS: Last Response: r.status_code: {}".format(r.status_code))
         elif( (s==2 ) and (self.status >= s ) and (r is not None) ):
             print("#STATUS: Last Response: r.url: {}".format(r.url))
+            print("#STATUS: Last Response: r.elapsed(responseTime): {0:.2f} sec".format(r.elapsed.total_seconds()))
         elif( (s==3 ) and (self.status >= s ) and (r is not None) ):
             if( addSessionLoginInfo is True):
                 print("#____AUTH_TOKEN:  {}".format(self.authToken))
@@ -736,6 +761,7 @@ class RfTransport():
                 print("#__Request AuthType: {}".format(authMsg))
                 print("#__Request Data: {}".format(r.request.body))
                 print("#__Response.status_code: {},         r.url: {}".format(r.status_code,r.url))
+                print("#__Response.elapsed(responseTime): {0:.2f} sec".format(r.elapsed.total_seconds()))
         elif( (s==4 ) and (self.status >= s ) and (r is not None) ):
             print("#__Response.Headers: {}".format(r.headers))
         elif( (s==5 ) and (self.status >= s )  ):
@@ -831,7 +857,7 @@ class RfTransport():
         if(rft.Link is not None):
             for i in range (0,numOfLinks):
                 if( '@odata.id'  not in coll['Members'][i] ):
-                    rft.printErr("Error: getPathBy --Link option: improper formated link-no @odata.id")
+                    rft.printErr("Error: getPathBy --Link option: improper formatted link-no @odata.id")
                     return(None,1,None,False,None)
                 else:
                     path=coll['Members'][i]['@odata.id']
@@ -847,14 +873,14 @@ class RfTransport():
                 rft.printErr("Error: getPathBy --One option: more than one link in members array")
                 return(None,1,None,False,None)
             if('@odata.id'  not in coll['Members'][0] ):
-                rft.printErr("Error: getPathBy --One option: improper formated link-no @odata.id")
+                rft.printErr("Error: getPathBy --One option: improper formatted link-no @odata.id")
                 return(None,1,None,False,None)
             else:
                 return(coll['Members'][0]['@odata.id'],0,None,False,None)
 
         elif( rft.firstOptn and not rft.gotMatchOptn):
             if( '@odata.id'  not in coll['Members'][0] ):
-                rft.printErr("Error: getPathBy --First option: improper formated link-no @odata.id")
+                rft.printErr("Error: getPathBy --First option: improper formatted link-no @odata.id")
                 return(None,1,None,False,None)
             else:   
                 return(coll['Members'][0]['@odata.id'],0,None,False,None)
@@ -865,7 +891,7 @@ class RfTransport():
             matches=0
             for i in range (0,numOfLinks):
                 if( '@odata.id'  not in coll['Members'][i] ):
-                    rft.printErr("Error: getPathBy --Id or --Match option: improper formated link-no @odata.id")
+                    rft.printErr("Error: getPathBy --Id or --Match option: improper formatted link-no @odata.id")
                     return(None,1,None,False,None)
                 else:
                     path=coll['Members'][i]['@odata.id']
@@ -912,7 +938,7 @@ class RfTransport():
         if(rft.linkLevel2 is not None):
             for i in range (0,numOfLinks):
                 if( '@odata.id'  not in coll['Members'][i] ):
-                    rft.printErr("Error: getPathBy --Link option: improper formated link-no @odata.id")
+                    rft.printErr("Error: getPathBy --Link option: improper formatted link-no @odata.id")
                     return(None,1,None,False,None)
                 else:
                     path=coll['Members'][i]['@odata.id']
@@ -926,7 +952,7 @@ class RfTransport():
             baseUrl=r.url
             for i in range (0,numOfLinks):
                 if( '@odata.id'  not in coll['Members'][i] ):
-                    rft.printErr("Error: getPathBy2 --Id or --Match option: improper formated link-no @odata.id")
+                    rft.printErr("Error: getPathBy2 --Id or --Match option: improper formatted link-no @odata.id")
                     return(None,1,None,False,None)
                 else:
                     path=coll['Members'][i]['@odata.id']
@@ -969,7 +995,7 @@ class RfTransport():
         members=list()
         for i in range (0,numOfLinks):
             if( '@odata.id'  not in coll['Members'][i] ):
-                rft.printErr("Error: listCollection  improper formated link-no @odata.id")
+                rft.printErr("Error: listCollection  improper formatted link-no @odata.id")
                 return(4,None,False,None)
             else:
                 path=coll['Members'][i]['@odata.id']
@@ -992,7 +1018,11 @@ class RfTransport():
                     members.append(listMember)
 
         #create base list dictionary
-        listd={ "@odata.id": path, "Members@odata.count": numOfLinks, "Members": members }
+        collPath=urlparse(baseUrl).path
+        collname=""
+        if "Name" in coll:
+            collname=coll["Name"]
+        listd={ "_Path": collPath, "Name": collname, "Members@odata.count": numOfLinks, "Members": members }
         return(0, None, True, listd)
 
 
@@ -1016,7 +1046,7 @@ class RfTransport():
         expandedMembers=list()
         for i in range (0,numOfLinks):
             if( '@odata.id'  not in coll['Members'][i] ):
-                rft.printErr("Error: getAllCollectionMembers  improper formated link-no @odata.id")
+                rft.printErr("Error: getAllCollectionMembers  improper formatted link-no @odata.id")
                 return(4,None,False,None)
             else:
                 path=coll['Members'][i]['@odata.id']
@@ -1111,13 +1141,4 @@ class RfTransport():
 TODO:
 1.
 
-CHANGE LOG:
-v0.9--initial
-v0.9.1 update:
-   -- add sys.stderr.flush  to printErr()
-   -- add sys.stdio.flush   to printStatus() and printVerbose()
-   -- update self.version to 0.9.1,  self.releaseDate to 05/18/2016
-   -- add parseOdataType(rft,resource) function to parse @odata.type into namespace, version, resType
-   -- default headers now stored as properties in redfishTransport class, and now include OData-Version and Accept
-   -- modified header merging logic to Add or modify any headers passed-in via -H <header dict>
 '''

@@ -52,7 +52,7 @@ def displayOptions(rft):
         print("   -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output")
         print("                                       -v ")
         print("   -q,          --quiet             -- quiet mode. no progress messages are displayed")
-        print("   -C,          --custom            -- custom mode. use static over recursive root resource discovery")
+        print("   -C,          --custom            -- custom mode. use static nav structure instead of recursive algorithm")
         print("   -S,          --Secure            -- use HTTPS for all gets.   otherwise HTTP is used")
         print("   -u <user>,   --user=<usernm>     -- username used for remote redfish authentication")
         print("   -p <passwd>, --password=<passwd> -- password used for remote redfish authentication")
@@ -103,12 +103,17 @@ def main(argv):
 
     # set default verbose level to 1.  so -v will cause verbose level to go to 2
     rft.verbose=1
+    rft.program="redfishMockupCreate"
+    rft.version="0.9.2"
+    rft.releaseDate="05/28/2017"
+    rft.secure="Never"
     
     #initialize properties used here in main
     mockDirPath=None
     mockDir=None
-    description=None
+    description=""
     rfFile="index.json"
+    custom=False
     
     try:
         opts, args = getopt.gnu_getopt(argv[1:],"VhvqSu:p:r:A:D:d:C",
@@ -145,7 +150,7 @@ def main(argv):
         elif opt in ("-q", "--quiet"):
             rft.quiet=true
         elif opt in ("-C", "--custom"):
-            rft.custom=True
+            custom=True
         elif opt in ("-A", "--Auth"):           # specify authentication type
             rft.auth=arg
             if not rft.auth in rft.authValidValues:
@@ -301,7 +306,7 @@ def main(argv):
     rft.printVerbose(1,"Start Creating resources under root service:")
 
     # If we specified "Custom" in optargs then run static discovery of resources
-    if( rft.custom is True):
+    if( custom is True):
         rft.printVerbose("Custom discovery of resources under root service specified")
 
         for rlink in rootLinks:
@@ -344,11 +349,11 @@ def recursive_call(rft,rs,rootUrl,mockDir):
     d = get_nav_and_collection_properties(rft, rs)
     if d is not None:
         for x in d:
-            rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(x))
+            rft.printVerbose(1,"   Creating resource under navigation property: {}".format(x))
             # readResourceMkdirCreateIndxFile() method will create a directory and index.json file for the resource link
             rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, x)
             if(rc!=0):
-                rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(x))    
+                rft.printErr("ERROR: got error reading resource --continuing. link: {}".format(x))    
             # Recursively calling further tree nodes which will fetch data.
             recursive_call(rft,d,rootUrl,mockDir)
     else:
