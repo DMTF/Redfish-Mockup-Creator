@@ -232,7 +232,7 @@ def main(argv):
         readf.write("Created: {}\n".format(rfdatetime))
         readf.write("rhost:  {}\n".format(rft.rhost))
         readf.write("Description: {}\n".format(description))
-        readf.write("Commandline: {} {}\n".format('python34', ' '.join(argv)))
+        readf.write("Commandline: {} {}\n".format('python3.4', ' '.join(argv)))
     if os.path.isfile(readmeFile) is False:
         rft.printErr("ERROR: cant create README file in directory. aborting")
         sys.exit(1)
@@ -346,7 +346,7 @@ def main(argv):
                             rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
                 else:   # its not a collection. (eg accountService) do the 2nd level resources now
                     sublinklist=resourceLinks[rlink]
-                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addHeaders, addTime, member)
+                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, memberd, addCopyright, addHeaders, addTime)
                     if(rc!=0):
                         rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
     else:
