@@ -37,10 +37,6 @@ resourceLinks={
         "EventService": ["Subscriptions"]
 }
 
-addCopyright = None
-headers = None
-time = None
-
 def displayUsage(rft,*argv,**kwargs):
         rft.printErr("  Usage:",noprog=True)
         rft.printErr("   {} [-VhvqS] -u<user> -p<passwd> -r<rhost[<port>] [-A <auth>] [-D <dir>]",prepend="  ")
@@ -121,15 +117,15 @@ def main(argv):
     rfFileHeaders="headers.json"
     rfFileTime="time.json"
     custom=False
-    addCopyright=False #TODO must this be global or change api signatures?
-    headers=False
-    time=False
+    addCopyright=None
+    addHeaders=False
+    addTime=False
     
     try:
-        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSu:p:r:A:C:H:T:D:d:",
+        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSHTu:p:r:A:C:D:d:",
                         ["Version", "help", "quiet", "Secure=",
                          "user=", "password=", "rhost=","Auth=",
-                         "custom", "Copyright", "Headers", "Time", "Dir=, description=]"])
+                         "custom", "Copyright=", "Headers", "Time", "Dir=, description=]"])
     except getopt.GetoptError:
         rft.printErr("Error parsing options")
         displayUsage(rft)
@@ -163,14 +159,11 @@ def main(argv):
         elif opt in ("--custom"):
             custom=True
         elif opt in ("-C", "--Copyright"):
-            global addCopyright
             addCopyright=arg
         elif opt in ("-H", "--Headers"):
-            global headers
-            headers=True
+            addHeaders=True
         elif opt in ("-T", "--Time"):
-            global time
-            time=True
+            addTime=True
         elif opt in ("-A", "--Auth"):           # specify authentication type
             rft.auth=arg
             if not rft.auth in rft.authValidValues:
@@ -335,7 +328,7 @@ def main(argv):
             if(rlink in rootRes):
                 link=rootRes[rlink]
                 rft.printVerbose(1,"   Creating resource under root service navigation property: {}".format(rlink))
-                rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link)
+                rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, addHeaders, addTime)
                 if(rc!=0):
                     rft.printErr("ERROR: got error reading root service resource--continuing. link: {}".format(link))
                 resd=d
@@ -343,40 +336,40 @@ def main(argv):
                 if isCollection(resd) is True:  # (eg Systems, Chassis...)
                     for member in resd["Members"]:
                         rft.printVerbose(4,"    Collection member: {}".format(member))
-                        rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, member)
+                        rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, member, addCopyright, addHeaders, addTime)
                         if(rc!=0):
                             rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(member))
                         memberd=d
                         sublinklist=resourceLinks[rlink]
-                        rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd)
+                        rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd, addHeaders, addTime, member)
                         if(rc!=0):
                             rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
                 else:   # its not a collection. (eg accountService) do the 2nd level resources now
                     sublinklist=resourceLinks[rlink]
-                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd)
+                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addHeaders, addTime, member)
                     if(rc!=0):
                         rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
     else:
         # Starting recursive call.
-        recursive_call(rft,rootv1data,rootUrl,mockDir)
+        recursive_call(rft,rootv1data,rootUrl,mockDir, addCopyright, addHeaders, addTime)
 
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
 
 
-def recursive_call(rft,rs,rootUrl,mockDir):
+def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime):
     # get_nav_and_collection_properties() method will go and fetch any nav or collection properties if present.
     # If none returns None. Indicating that there are no further down navigations.
     d = get_nav_and_collection_properties(rft, rs)
     if d is not None:
         for x in d:
             rft.printVerbose(1,"   Creating resource under navigation property: {}".format(x))
-            # readResourceMkdirCreateIndxFile() method will create a directory and index.json file for the resource link
-            rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, x)
+            # readResourceMkdirCreateIndxFile(addCopyright, addHeaders, addTime, ) method will create a directory and index.json file for the resource link
+            rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, x, addCopyright, addHeaders, addTime)
             if(rc!=0):
                 rft.printErr("ERROR: got error reading resource --continuing. link: {}".format(x))    
             # Recursively calling further tree nodes which will fetch data.
-            recursive_call(rft,d,rootUrl,mockDir)
+            recursive_call(rft,d,rootUrl,mockDir, addCopyright, addHeaders, addTime)
     else:
         return (None)
 
@@ -420,12 +413,12 @@ def rfMakeDir(rft, dirPath):
 
 
 
-def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, jsonData=True):
+def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, addHeaders, addTime, jsonData=True):
     #print("building resource tree for link: {}".format(link))
     if not "@odata.id" in link:
         rft.printErr("ERROR:readResourceMkdirCreateIndxFile: no @odata.id property in link: {}".format(link))
         return(5,None,False, None)
-    
+
     absPath=link["@odata.id"]
     if(absPath[0]=='/'):
         relPath=absPath[1:]
@@ -445,41 +438,43 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, jsonData=True):
 
 
     #Store headers into the headers.json
-    hdrsFilePath=os.path.join(dirPath,"headers.json")
-    with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-        #TODO Q how to understand types/dicts better
-        dictHeader = dict(r.headers)
-        headerFileData = {"GET" : dictHeader}
-        json.dump(headerFileData, hf, indent=4)
+    if (addHeaders is True):
+        hdrsFilePath=os.path.join(dirPath,"headers.json")
+        with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
+            #TODO Q how to understand types/dicts better
+            dictHeader = dict(r.headers)
+            headerFileData = {"GET" : dictHeader}
+            json.dump(headerFileData, hf, indent=4)
 
-    #TODO Josh add new option -T or --Time time.json
-    timeFilePath=os.path.join(dirPath,"time.json")
-    with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-        elapsedTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-        timeFileData = {"GET_Time": elapsedTime}
-        json.dump(timeFileData, tf, indent=4) 
+    #Store elapsed response time into time.json
+    if (addTime is True):
+        timeFilePath=os.path.join(dirPath,"time.json")
+        with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
+            elapsedTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+            timeFileData = {"GET_Time": elapsedTime}
+            json.dump(timeFileData, tf, indent=4)
 
-    #Add copyright key/value pair 
+    #Add copyright key/value pair into index.json
     if (addCopyright is not None):
         d['@redfish.copyright'] = addCopyright
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
         json.dump(d, f, indent=4) #TODO change to .json?
-        
+
     return(rc, r, j, d )
 
 
 
 
 # sublinklist=resourceLinks[rlink]
-def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd):
+def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addHeaders, addTime, member):
     if( len(sublinklist)==0 ):
         return(0,None,False,None)
     for rlink2 in sublinklist:   #(ex Processors, Power)
         if( rlink2 in resd):
             link2=resd[rlink2]
             rft.printVerbose(4,"        Creating sub-property: {}".format(rlink2))
-            rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, link2,jsonData=True)
+            rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, link2, addCopyright, addHeaders, addTime, jsonData=True)
             if(rc!=0):
                 rft.printErr("ERROR: got error reading 2nd level resource--continuing. link: {}".format(link2))
                 return(rc,r,j,d)
@@ -488,7 +483,7 @@ def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd):
             if isCollection(resd2) is True:  #ex Processors, get /1, /2
                 for member2 in resd2["Members"]:
                     rft.printVerbose(4,"          Creating 2nd-level Collection member: {}".format(member2))
-                    rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl,mockDir, member2,jsonData=True)
+                    rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, member2, addCopyright, addHeaders, addTime, jsonData=True)
                     resd3=d
                     if(rc!=0):
                         rft.printErr("ERROR: got error reading 2nd level collection member--continuing. link: {}".format(member2))
@@ -499,18 +494,18 @@ def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd):
                         if( "Entries" in resd3):
                             entriesLink=resd3["Entries"]
                             rft.printVerbose(2,"               Creating LogService Entries (Expanded Collection): {}".format(member2))
-                            rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl,mockDir, entriesLink,jsonData=False)
+                            rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, entriesLink, addCopyright, addHeaders, addTime, jsonData=False)
                             if(rc!=0):
                                 rft.printErr("ERROR: got error reading logService Entries collection resource--continuing. link: {}".format(entriesLink))
         else:
             rft.printVerbose(2,"       No sub-properties in resource: {}")
             return(0,None,False,None)
-    
+
     return(rc,r,j,d)
 
 
 
-                                     
+
 
 def isCollection(resource):
     if "Members" in resource:
