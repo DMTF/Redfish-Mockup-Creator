@@ -443,9 +443,6 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, jsonData=True):
         rft.printErr("ERROR:readResourceMkdirCreateIndxFile: for link:{}, path:{}, cant create directory: {}. aborting".format(link,absPath,dirPath))
         return(5,r,False, None)
 
-    #Add copyright key/value pair 
-    if (addCopyright is not None):
-        d['@redfish.copyright'] = addCopyright
 
     #Store headers into the headers.json
     hdrsFilePath=os.path.join(dirPath,"headers.json")
@@ -453,21 +450,21 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, jsonData=True):
         #TODO Q how to understand types/dicts better
         dictHeader = dict(r.headers)
         headerFileData = {"GET" : dictHeader}
-        json.dump(headerFileData, hf)
+        json.dump(headerFileData, hf, indent=4)
 
     #TODO Josh add new option -T or --Time time.json
     timeFilePath=os.path.join(dirPath,"time.json")
     with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
         elapsedTime = '{0:.2f}'.format(r.elapsed.total_seconds())
         timeFileData = {"GET_Time": elapsedTime}
-        json.dump(timeFileData, tf) 
+        json.dump(timeFileData, tf, indent=4) 
 
-
+    #Add copyright key/value pair 
+    if (addCopyright is not None):
+        d['@redfish.copyright'] = addCopyright
     filePath=os.path.join(dirPath,"index.json")
-
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        #f.write(r.text) #TODO change to .json?
-        json.dump(d, f) #TODO change to .json?
+        json.dump(d, f, indent=4) #TODO change to .json?
         
     return(rc, r, j, d )
 
