@@ -37,7 +37,9 @@ resourceLinks={
         "EventService": ["Subscriptions"]
 }
 
-
+addCopyright = None
+headers = None
+time = None
 
 def displayUsage(rft,*argv,**kwargs):
         rft.printErr("  Usage:",noprog=True)
@@ -52,7 +54,10 @@ def displayOptions(rft):
         print("   -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output")
         print("                                       -v ")
         print("   -q,          --quiet             -- quiet mode. no progress messages are displayed")
-        print("   -C,          --custom            -- custom mode. use static nav structure instead of recursive algorithm")
+        print("--custom        -- custom mode. use static nav structure instead of recursive algorithm")
+        print("   -C,          --Copyright         -- Add Copyright. The specified Copyright will be added to each resource")
+        print("   -H,          --Headers           -- Headers mode. An additional headers property will be added to each resource")
+        print("   -T,          --Time              -- Time mode. Retrieval time of each GET will be captured")
         print("   -S,          --Secure            -- use HTTPS for all gets.   otherwise HTTP is used")
         print("   -u <user>,   --user=<usernm>     -- username used for remote redfish authentication")
         print("   -p <passwd>, --password=<passwd> -- password used for remote redfish authentication")
@@ -113,12 +118,18 @@ def main(argv):
     mockDir=None
     description=""
     rfFile="index.json"
+    rfFileHeaders="headers.json"
+    rfFileTime="time.json"
     custom=False
+    addCopyright=False #TODO must this be global or change api signatures?
+    headers=False
+    time=False
     
     try:
-        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSu:p:r:A:D:d:C",
-                        ["Version", "help", "quiet", "Secure=", "Custom",
-                         "user=", "password=", "rhost=","Auth=","Dir=, description=]"])
+        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSu:p:r:A:C:H:T:D:d:",
+                        ["Version", "help", "quiet", "Secure=",
+                         "user=", "password=", "rhost=","Auth=",
+                         "custom", "Copyright", "Headers", "Time", "Dir=, description=]"])
     except getopt.GetoptError:
         rft.printErr("Error parsing options")
         displayUsage(rft)
@@ -149,8 +160,17 @@ def main(argv):
             rft.secure="Always"
         elif opt in ("-q", "--quiet"):
             rft.quiet=true
-        elif opt in ("-C", "--custom"):
+        elif opt in ("--custom"):
             custom=True
+        elif opt in ("-C", "--Copyright"):
+            global addCopyright
+            addCopyright=arg
+        elif opt in ("-H", "--Headers"):
+            global headers
+            headers=True
+        elif opt in ("-T", "--Time"):
+            global time
+            time=True
         elif opt in ("-A", "--Auth"):           # specify authentication type
             rft.auth=arg
             if not rft.auth in rft.authValidValues:
@@ -219,6 +239,7 @@ def main(argv):
         readf.write("Created: {}\n".format(rfdatetime))
         readf.write("rhost:  {}\n".format(rft.rhost))
         readf.write("Description: {}\n".format(description))
+        readf.write("Commandline: {} {}\n".format('python34', ' '.join(argv)))
     if os.path.isfile(readmeFile) is False:
         rft.printErr("ERROR: cant create README file in directory. aborting")
         sys.exit(1)
@@ -399,7 +420,7 @@ def rfMakeDir(rft, dirPath):
 
 
 
-def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link,  jsonData=True):
+def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, jsonData=True):
     #print("building resource tree for link: {}".format(link))
     if not "@odata.id" in link:
         rft.printErr("ERROR:readResourceMkdirCreateIndxFile: no @odata.id property in link: {}".format(link))
@@ -422,9 +443,31 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link,  jsonData=True)
         rft.printErr("ERROR:readResourceMkdirCreateIndxFile: for link:{}, path:{}, cant create directory: {}. aborting".format(link,absPath,dirPath))
         return(5,r,False, None)
 
+    #Add copyright key/value pair 
+    if (addCopyright is not None):
+        d['@redfish.copyright'] = addCopyright
+
+    #Store headers into the headers.json
+    hdrsFilePath=os.path.join(dirPath,"headers.json")
+    with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
+        #TODO Q how to understand types/dicts better
+        dictHeader = dict(r.headers)
+        headerFileData = {"GET" : dictHeader}
+        json.dump(headerFileData, hf)
+
+    #TODO Josh add new option -T or --Time time.json
+    timeFilePath=os.path.join(dirPath,"time.json")
+    with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
+        elapsedTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+        timeFileData = {"GET_Time": elapsedTime}
+        json.dump(timeFileData, tf) 
+
+
     filePath=os.path.join(dirPath,"index.json")
+
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        f.write(r.text)
+        #f.write(r.text) #TODO change to .json?
+        json.dump(d, f) #TODO change to .json?
         
     return(rc, r, j, d )
 
