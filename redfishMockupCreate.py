@@ -20,7 +20,7 @@ import datetime
 
 
 # rootservice navigation properties
-rootLinks=["Systems","Chassis", "Managers", "SessionService", "AccountService", "Registries",
+rootLinks=["Systems","Chassis","Managers", "SessionService", "AccountService", "Registries",
         "JsonSchemas", "Tasks", "EventService", "UpdateService"]
 # list of navigation properties for each root service nav props
 resourceLinks={
@@ -34,7 +34,8 @@ resourceLinks={
         "Registries": [],
         "JsonSchemas": [],
         "Tasks": ["Tasks"],
-        "EventService": ["Subscriptions"]
+        "EventService": ["Subscriptions"],
+        "UpdateService": []
 }
 
 def displayUsage(rft,*argv,**kwargs):
@@ -341,12 +342,12 @@ def main(argv):
                             rft.printErr("ERROR: got error reading root service collection member--continuing. link: {}".format(member))
                         memberd=d
                         sublinklist=resourceLinks[rlink]
-                        rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir,  sublinklist, memberd, addHeaders, addTime, member)
+                        rc,r,j,d=addSecondLevelResource(rft, rootUrl,mockDir, sublinklist, memberd, addCopyright, addHeaders, addTime)
                         if(rc!=0):
                             rft.printErr("ERROR: Error processing 2nd level resource (8)--continuing. link:{}".format(member))
                 else:   # its not a collection. (eg accountService) do the 2nd level resources now
                     sublinklist=resourceLinks[rlink]
-                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, memberd, addCopyright, addHeaders, addTime)
+                    rc,r,j,d=addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addCopyright, addHeaders, addTime)
                     if(rc!=0):
                         rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
     else:
@@ -450,13 +451,17 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
     if (addTime is True):
         timeFilePath=os.path.join(dirPath,"time.json")
         with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-            elapsedTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+            elapsedTime = '{0:.2f}'.format(rft.elapsed)
             timeFileData = {"GET_Time": elapsedTime}
             json.dump(timeFileData, tf, indent=4)
 
     #Add copyright key/value pair into index.json
     if (addCopyright is not None):
-        d['@redfish.copyright'] = addCopyright
+        if(type(d) is dict):
+            d['@redfish.copyright'] = addCopyright
+        else:
+            rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
+    #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
         json.dump(d, f, indent=4) #TODO change to .json?
@@ -467,7 +472,7 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
 
 
 # sublinklist=resourceLinks[rlink]
-def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addHeaders, addTime, member):
+def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addCopyright, addHeaders, addTime):
     if( len(sublinklist)==0 ):
         return(0,None,False,None)
     for rlink2 in sublinklist:   #(ex Processors, Power)
