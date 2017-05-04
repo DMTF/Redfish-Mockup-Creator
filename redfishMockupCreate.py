@@ -121,6 +121,7 @@ def main(argv):
     addCopyright=None
     addHeaders=False
     addTime=False
+    exceptionList = ['Logs']
     
     try:
         opts, args = getopt.gnu_getopt(argv[1:],"VhvqSHTu:p:r:A:C:D:d:",
@@ -352,16 +353,16 @@ def main(argv):
                         rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
     else:
         # Starting recursive call.
-        recursive_call(rft,rootv1data,rootUrl,mockDir, addCopyright, addHeaders, addTime)
+        recursive_call(rft,rootv1data,rootUrl,mockDir, addCopyright, addHeaders, addTime,exceptionList)
 
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
 
 
-def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime):
+def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime, exceptionList):
     # get_nav_and_collection_properties() method will go and fetch any nav or collection properties if present.
     # If none returns None. Indicating that there are no further down navigations.
-    d = get_nav_and_collection_properties(rft, rs)
+    d = get_nav_and_collection_properties(rft, rs,exceptionList)
     if d is not None:
         for x in d:
             rft.printVerbose(1,"   Creating resource under navigation property: {}".format(x))
@@ -370,28 +371,37 @@ def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime):
             if(rc!=0):
                 rft.printErr("ERROR: got error reading resource --continuing. link: {}".format(x))    
             # Recursively calling further tree nodes which will fetch data.
-            recursive_call(rft,d,rootUrl,mockDir, addCopyright, addHeaders, addTime)
+            recursive_call(rft,d,rootUrl,mockDir, addCopyright, addHeaders, addTime, exceptionList)
     else:
         return (None)
 
-def get_nav_and_collection_properties(rft,rs):    
+def get_nav_and_collection_properties(rft,rs, exceptionList):    
     if not isinstance(rs,dict):
         return (None)
     nav_list = list()
-    for k,v in rs.items():
-        # Checking if values have keys "@odata.id" only or not.
-        if isinstance(v,list):
-            for x in v:
-                if isinstance(x,dict):
-                    # This is to make sure there is only one key-value pair and it has "@odata.id" as key
-                    if len(x) == 1 and '@odata.id' in x.keys():
-                        nav_list.append(x)
-            
-        elif isinstance(v,dict):
-            # This is to make sure there is only one key-value pair and it has "@odata.id" as key
-            if len(v) == 1 and '@odata.id' in v.keys():
-                nav_list.append(v)
-            
+    # Seperate rule for Exception list. 
+    if ( any(x in rs['@odata.id']  for x in exceptionList ) ) :
+        if isCollection(rs):
+            for k,v in rs.items():
+                if k == 'Members' and isinstance(v,list):
+                    for i in v:
+                        if '@odata.id' in i:
+                            nav_list.append(i)
+    else:
+        for k,v in rs.items():
+            # Checking if values have keys "@odata.id" only or not.
+            if isinstance(v,list):
+                for x in v:
+                    if isinstance(x,dict):
+                        # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+                        if len(x) == 1 and '@odata.id' in x.keys():
+                            nav_list.append(x)
+                
+            elif isinstance(v,dict):
+                # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+                if len(v) == 1 and '@odata.id' in v.keys():
+                    nav_list.append(v)
+                
     if not nav_list:
         return (None)                   # If the list is empty, it means there are no navigation properties.
     else:
@@ -427,6 +437,8 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
         relPath=absPath
 
     # read the resource.
+
+
     rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', rootUrl, relPath=absPath, jsonData=jsonData )
     if(rc!=0):
         rft.printErr("ERROR:readResourceMkdirCreateIndxFile: Error reading resource: link:{}".format(link))
@@ -499,7 +511,7 @@ def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addCopyrigh
                         if( "Entries" in resd3):
                             entriesLink=resd3["Entries"]
                             rft.printVerbose(2,"               Creating LogService Entries (Expanded Collection): {}".format(member2))
-                            rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, entriesLink, addCopyright, addHeaders, addTime, jsonData=False)
+                            rc,r,j,d=readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, entriesLink, addCopyright, addHeaders, addTime, jsonData=True)
                             if(rc!=0):
                                 rft.printErr("ERROR: got error reading logService Entries collection resource--continuing. link: {}".format(entriesLink))
         else:
