@@ -15,7 +15,8 @@ As a result, it is a way to take a snapshot of a system
  
 
 ### Options
-   `redfishMockupCreate  [-VhvqS] -u<user> -p<passwd> -r<rpath> [-A<auth>] [-D<directoryPath>] -d [<descriptionString>]`
+```
+   redfishMockupCreate  [-VhvqS] -u<user> -p<passwd> -r<rpath> [-A<auth>] [-D<directoryPath>] -d [<descriptionString>]
    -V,          --version           -- show redfishMockupCreate version, and exit
    -h,          --help              -- show Usage, Options
    -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output
@@ -32,7 +33,7 @@ As a result, it is a way to take a snapshot of a system
    -A <Auth>,   --Auth=<auth>       -- auth method ot use: None, Basic(dflt), Session
    -D <directory>,--Dir=<directory> -- output mockup to directory path <directory>
    -d <description> --description=<d> -- text description that is put in README. ex: -d "mockup of Contoso 1U"
-
+```
 
 ##  Example
 ### Create a directory that is the name of the mockup you are creating
