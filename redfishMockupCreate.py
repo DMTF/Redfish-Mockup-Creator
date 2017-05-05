@@ -49,10 +49,9 @@ def displayOptions(rft):
         print("   -V,          --version           -- show {} version, and exit".format(rft.program))
         print("   -h,          --help              -- show Usage, Options".format(rft.program))
         print("   -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output")
-        print("                                       -v ")
         print("   -q,          --quiet             -- quiet mode. no progress messages are displayed")
         print("--custom        -- custom mode. use static nav structure instead of recursive algorithm")
-        print("   -C,          --Copyright         -- Add Copyright. The specified Copyright will be added to each resource")
+        print("   -C <string>, --Copyright=<string>-- Add Copyright. The specified Copyright will be added to each resource")
         print("   -H,          --Headers           -- Headers mode. An additional headers property will be added to each resource")
         print("   -T,          --Time              -- Time mode. Retrieval time of each GET will be captured")
         print("   -S,          --Secure            -- use HTTPS for all gets.   otherwise HTTP is used")
@@ -121,7 +120,8 @@ def main(argv):
     addCopyright=None
     addHeaders=False
     addTime=False
-    exceptionList = ['Logs']
+    #Exception List required given Dell 13g iDRAC does not include odata.type with expanded Log
+    exceptionList = ['iDRAC.Embedded.1/Logs/'] 
     
     try:
         opts, args = getopt.gnu_getopt(argv[1:],"VhvqSHTu:p:r:A:C:D:d:",
@@ -365,7 +365,7 @@ def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime, ex
     d = get_nav_and_collection_properties(rft, rs,exceptionList)
     if d is not None:
         for x in d:
-            rft.printVerbose(1,"   Creating resource under navigation property: {}".format(x))
+            rft.printVerbose(1,"   Creating resource at: {}".format(x["@odata.id"]))
             # readResourceMkdirCreateIndxFile(addCopyright, addHeaders, addTime, ) method will create a directory and index.json file for the resource link
             rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, x, addCopyright, addHeaders, addTime)
             if(rc!=0):
@@ -389,19 +389,27 @@ def get_nav_and_collection_properties(rft,rs, exceptionList):
                             nav_list.append(i)
     else:
         for k,v in rs.items():
-            # Checking if values have keys "@odata.id" only or not.
-            if isinstance(v,list):
-                for x in v:
-                    if isinstance(x,dict):
-                        # This is to make sure there is only one key-value pair and it has "@odata.id" as key
-                        if len(x) == 1 and '@odata.id' in x.keys():
-                            nav_list.append(x)
-                
-            elif isinstance(v,dict):
-                # This is to make sure there is only one key-value pair and it has "@odata.id" as key
-                if len(v) == 1 and '@odata.id' in v.keys():
-                    nav_list.append(v)
-                
+           # Checking if values have keys "@odata.id" only or not.
+           if isinstance(v,list):
+               for x in v:
+                   if isinstance(x,dict):
+                       # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+                       if len(x) == 1 and '@odata.id' in x.keys():
+                           nav_list.append(x)
+                       elif len(x) >1 and '@odata.type' in x:
+                           ns,ver,resType=rft.parseOdataType(rft,x)
+                           if resType == 'LogEntry':
+                               nav_list.append(x)
+                                       
+           elif isinstance(v,dict):
+               # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+               if len(v) == 1 and '@odata.id' in v.keys():
+                   nav_list.append(v)
+               elif len(v) >1 and '@odata.type' in v:
+                   ns,ver,resType=rft.parseOdataType(rft,v)
+                   if resType == 'LogEntry':
+                       nav_list.append(v)
+    
     if not nav_list:
         return (None)                   # If the list is empty, it means there are no navigation properties.
     else:
@@ -414,9 +422,10 @@ def rfMakeDir(rft, dirPath):
         os.makedirs(dirPath)
     except OSError as ee:
         if( ee.errno == errno.EEXIST):
-            rft.printErr("ERROR: rfMakeDir: Directory: already exists. aborting")
-            rft.printErr("Directory: {} ".format(dirPath),noprog=True,prepend="            ")
-            success=False
+            #rft.printErr("ERROR: rfMakeDir: Directory: already exists. aborting")
+            #rft.printErr("Directory: {} ".format(dirPath),noprog=True,prepend="            ")
+            #It's ok if the path is already created from a previous URL
+            success=True
         else:
             rft.printErr("ERROR: rfMakeDir: Error creating directory: {}".format(ee.errno))
             success=False
@@ -449,6 +458,10 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
         rft.printErr("ERROR:readResourceMkdirCreateIndxFile: for link:{}, path:{}, cant create directory: {}. aborting".format(link,absPath,dirPath))
         return(5,r,False, None)
 
+    # Before storing header,time,etc files; Check if index file exists, if so we have some problem
+    filePath=os.path.join(dirPath,"index.json")
+    if os.path.isfile(filePath) is True:
+        rft.printErr("ERROR: index.json file already exists in this directory {} --continuing".format(filePath))
 
     #Store headers into the headers.json
     if (addHeaders is True):
