@@ -378,6 +378,8 @@ def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime, ex
 def get_nav_and_collection_properties(rft,rs, exceptionList):    
     if not isinstance(rs,dict):
         return (None)
+    if "@odata.id" not in rs:
+        return (None)
     nav_list = list()
     # Seperate rule for Exception list. 
     if ( any(x in rs['@odata.id']  for x in exceptionList ) ) :
