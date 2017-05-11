@@ -485,7 +485,7 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
     #Add copyright key/value pair into index.json
     if (addCopyright is not None):
         if(type(d) is dict):
-            d['@redfish.copyright'] = addCopyright
+            d['@Redfish.copyright'] = addCopyright
         else:
             rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
     #Store resource dictionary into index.json
