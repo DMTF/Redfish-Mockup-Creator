@@ -15,24 +15,24 @@ As a result, it is a way to take a snapshot of a system
  
 
 ### Options
-   `redfishMockupCreate  [-VhvqS] -u<user> -p<passwd> -r<rpath> [-A<auth>] [-D<directoryPath>] -d [<descriptionString>]`
-   -V,          --version           -- show redfishMockupCreate version, and exit
-   -h,          --help              -- show Usage, Options
-   -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output
-                                       -v
-   -q,          --quiet             -- quiet mode. no progress messages are displayed
-   --custom     -- custom mode. use static nav structure instead of recursive algorithm
-   -C,          --Copyright         -- Add Copyright. The specified Copyright will be added to each resource
-   -H,          --Headers           -- Headers mode. An additional headers property will be added to each resource
-   -T,          --Time              -- Time mode. Retrieval time of each GET will be captured
-   -S,          --Secure            -- use HTTPS for all gets.   otherwise HTTP is used
-   -u <user>,   --user=<usernm>     -- username used for remote redfish authentication
-   -p <passwd>, --password=<passwd> -- password used for remote redfish authentication
-   -r <rhost>,  --rhost=<rhost>     -- remote redfish service hostname or IP:port
-   -A <Auth>,   --Auth=<auth>       -- auth method ot use: None, Basic(dflt), Session
-   -D <directory>,--Dir=<directory> -- output mockup to directory path <directory>
+```
+   redfishMockupCreate  [-VhvqS] -u<user> -p<passwd> -r<rpath> [-A<auth>] [-D<directoryPath>] -d [<descriptionString>]
+   -V,          --version             -- show redfishMockupCreate version, and exit
+   -h,          --help                -- show Usage, Options
+   -v,          --verbose             -- verbose level, can repeat up to 4 times for more verbose output
+   -q,          --quiet               -- quiet mode. no progress messages are displayed
+   --custom                           -- custom mode. use static nav structure instead of recursive algorithm
+   -C <string>, --Copyright=<string>  -- Add Copyright message. The specified Copyright will be added to each resource
+   -H,          --Headers             -- Headers mode. An additional headers property will be added to each resource
+   -T,          --Time                -- Time mode. Retrieval time of each GET will be captured
+   -S,          --Secure              -- use HTTPS for all gets.   otherwise HTTP is used
+   -u <user>,   --user=<usernm>       -- username used for remote redfish authentication
+   -p <passwd>, --password=<passwd>   -- password used for remote redfish authentication
+   -r <rhost>,  --rhost=<rhost>       -- remote redfish service hostname or IP:port
+   -A <Auth>,   --Auth=<auth>         -- auth method ot use: None, Basic(dflt), Session
+   -D <directory>,--Dir=<directory>   -- output mockup to directory path <directory>
    -d <description> --description=<d> -- text description that is put in README. ex: -d "mockup of Contoso 1U"
-
+```
 
 ##  Example
 ### Create a directory that is the name of the mockup you are creating
@@ -51,7 +51,7 @@ As a result, it is a way to take a snapshot of a system
     * MYC6320IP=129.168.0.9  #ex
 
 `python3.4 ./redfishMockupCreate.py –r $MYC6320IP –u root –p calvin –S –A Basic –D “$HOME/mymockups/C6320mockup9” \
-          -d “this is my mockup of a real C6320 in rack33"`
+          -d “this is my mockup of a real C6320 in rack33" -C "Copyright 2016 Contoso.com Inc. All rights reserved."`
 
      -r <ip> is the ip address of the server you are pulling the mockup from
      -u, -p is user/password
