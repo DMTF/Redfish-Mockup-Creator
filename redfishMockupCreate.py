@@ -108,6 +108,8 @@ def main(argv):
     rft.version="0.9.2"
     rft.releaseDate="05/28/2017"
     rft.secure="Never"
+    rft.waitTime=5
+    rft.timeout=20
     
     #initialize properties used here in main
     mockDirPath=None
@@ -220,8 +222,7 @@ def main(argv):
     rft.printVerbose(1,"description: {}".format(description))
     rft.printVerbose(1,"starting mockup creation")
 
-    #make sure directory is empty (no READ file), and create Read file
-    #TODO if directory exists and is empty then continue otherwise fail
+    #If directory exists and is empty then continue otherwise...
     if not os.path.isdir(mockDirPath) or os.listdir(mockDirPath):
         rft.printErr("ERROR: Directory not empty...faint-heartedly refusing to create mockup")
         sys.exit(1)
@@ -261,13 +262,12 @@ def main(argv):
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) #TODO change to .json?
+        json.dump(d, f, indent=4) 
 
     #Store headers into the headers.json
     if (addHeaders is True):
         hdrsFilePath=os.path.join(dirPath,"headers.json")
         with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            #TODO Q how to understand types/dicts better
             dictHeader = dict(r.headers)
             headerFileData = {"GET" : dictHeader}
             json.dump(headerFileData, hf, indent=4)
@@ -278,22 +278,18 @@ def main(argv):
         with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
             elapsedTime = '{0:.2f}'.format(rft.elapsed)
             timeFileData = {"GET_Time": elapsedTime}
-            #TODO Add head time; do we only write if -H is specified?
-            elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            timeFileData['HEAD_Time'] =  elapsedHeadTime
+            if (addHeaders is True):
+                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+                timeFileData['HEAD_Time'] =  elapsedHeadTime
             json.dump(timeFileData, tf, indent=4)
-            #if (addHeaders is True):
-            #    elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            #    timeFileData['HEAD_Time'] =  elapsedHeadTime
-            #    json.dump(timeFileData, tf, indent=4)
-
+           
     #create the /redfish/v1 root dir and copy output of Get ^/redfish/v1 to index.json file
     rft.printVerbose(1,"Creating /redfish/v1 resource")
     rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rft.rootPath)
     rootv1data = d
     if(rc!=0):
         rft.printErr("ERROR: Cant read root service:  GET /redfish/ from rhost. aborting")
-        #TODO print r.status_code to return status
+        #TODO jgiles print r.status_code to return status
         rft.printErr("Status Code: {} ".format(r.status_code))
         sys.exit(1)
     dirPath=os.path.join(mockDir, "redfish", "v1")
@@ -312,13 +308,12 @@ def main(argv):
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) #TODO change to .json?    
+        json.dump(d, f, indent=4) 
 
     #Store headers into the headers.json
     if (addHeaders is True):
         hdrsFilePath=os.path.join(dirPath,"headers.json")
         with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            #TODO Q how to understand types/dicts better
             dictHeader = dict(r.headers)
             headerFileData = {"GET" : dictHeader}
             json.dump(headerFileData, hf, indent=4)
@@ -329,15 +324,11 @@ def main(argv):
         with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
             elapsedTime = '{0:.2f}'.format(rft.elapsed)
             timeFileData = {"GET_Time": elapsedTime}
-            #TODO Add head time; do we only write if -H is specified?
-            elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            timeFileData['HEAD_Time'] =  elapsedHeadTime
+            if (addHeaders is True):
+                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+                timeFileData['HEAD_Time'] =  elapsedHeadTime
             json.dump(timeFileData, tf, indent=4)
-            #if (addHeaders is True):
-            #    elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            #    timeFileData['HEAD_Time'] =  elapsedHeadTime
-            #    json.dump(timeFileData, tf, indent=4)
-
+            
     #save the rootURL for later re-use  (if we were redirected, we get the redirected url here)
     rootUrl=r.url
     rootRes=d
@@ -365,13 +356,12 @@ def main(argv):
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) #TODO change to .json?
-            
+        json.dump(d, f, indent=4)
+
     #Store headers into the headers.json
     if (addHeaders is True):
         hdrsFilePath=os.path.join(dirPath,"headers.json")
         with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            #TODO Q how to understand types/dicts better
             dictHeader = dict(r.headers)
             headerFileData = {"GET" : dictHeader}
             json.dump(headerFileData, hf, indent=4)
@@ -382,14 +372,10 @@ def main(argv):
         with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
             elapsedTime = '{0:.2f}'.format(rft.elapsed)
             timeFileData = {"GET_Time": elapsedTime}
-            #TODO Add head time; do we only write if -H is specified?
-            elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            timeFileData['HEAD_Time'] =  elapsedHeadTime
+            if (addHeaders is True):
+                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+                timeFileData['HEAD_Time'] =  elapsedHeadTime
             json.dump(timeFileData, tf, indent=4)
-            #if (addHeaders is True):
-            #    elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            #    timeFileData['HEAD_Time'] =  elapsedHeadTime
-            #    json.dump(timeFileData, tf, indent=4)
 
 
     #get /redfish/v1/$metadata and save to mockup.   Note this is an .xml file stored as index.xml in mockup
@@ -576,7 +562,6 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
     if (addHeaders is True):
         hdrsFilePath=os.path.join(dirPath,"headers.json")
         with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            #TODO Q how to understand types/dicts better
             dictHeader = dict(r.headers)
             headerFileData = {"GET" : dictHeader}
             json.dump(headerFileData, hf, indent=4)
@@ -587,14 +572,10 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
         with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
             elapsedTime = '{0:.2f}'.format(rft.elapsed)
             timeFileData = {"GET_Time": elapsedTime}
-            #TODO Add head time; do we only write if -H is specified?
-            elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            timeFileData['HEAD_Time'] =  elapsedHeadTime
+            if (addHeaders is True):
+                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+                timeFileData['HEAD_Time'] =  elapsedHeadTime
             json.dump(timeFileData, tf, indent=4)
-            #if (addHeaders is True):
-            #    elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-            #    timeFileData['HEAD_Time'] =  elapsedHeadTime
-            #    json.dump(timeFileData, tf, indent=4)
 
     #Add copyright key/value pair into index.json
     if (addCopyright is not None):
@@ -605,7 +586,7 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) #TODO change to .json?
+        json.dump(d, f, indent=4) 
 
     return(rc, r, j, d )
 
@@ -668,4 +649,6 @@ if __name__ == "__main__":
 '''
 
 '''
+
+
 
