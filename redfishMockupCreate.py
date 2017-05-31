@@ -66,6 +66,30 @@ def displayOptions(rft):
 
 
 
+
+def addHeaderFile(addHeaders, r, dirPath):
+#Store headers into the headers.json
+    if (addHeaders is True):
+        hdrsFilePath = os.path.join(dirPath, "headers.json")
+        with open(hdrsFilePath, 'w', encoding='utf-8') as hf:
+            dictHeader = dict(r.headers)
+            headerFileData = {"GET":dictHeader}
+            rc = json.dump(headerFileData, hf, indent=4)
+    return rc
+
+
+def addTimeFile(addTime, addHeaders, rft, r, dirPath):
+    if (addTime is True):
+        timeFilePath = os.path.join(dirPath, "time.json")
+        with open(timeFilePath, 'w', encoding='utf-8') as tf:
+            elapsedTime = '{0:.2f}'.format(rft.elapsed)
+            timeFileData = {"GET_Time":elapsedTime}
+            if (addHeaders is True):
+                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+                timeFileData['HEAD_Time'] = elapsedHeadTime
+            rc = json.dump(timeFileData, tf, indent=4)
+    return rc
+
 def main(argv):
     # Resource, links used to drive the mockup creation
     # in future, mockupCreate could follow schemas, but initial 1.0 uses these
@@ -262,27 +286,13 @@ def main(argv):
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) 
+        json.dump(d, f, indent=4)
 
-    #Store headers into the headers.json
-    if (addHeaders is True):
-        hdrsFilePath=os.path.join(dirPath,"headers.json")
-        with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            dictHeader = dict(r.headers)
-            headerFileData = {"GET" : dictHeader}
-            json.dump(headerFileData, hf, indent=4)
+    addHeaderFile(addHeaders, r, dirPath)
 
     #Store elapsed response time into time.json
-    if (addTime is True):
-        timeFilePath=os.path.join(dirPath,"time.json")
-        with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-            elapsedTime = '{0:.2f}'.format(rft.elapsed)
-            timeFileData = {"GET_Time": elapsedTime}
-            if (addHeaders is True):
-                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-                timeFileData['HEAD_Time'] =  elapsedHeadTime
-            json.dump(timeFileData, tf, indent=4)
-           
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
+
     #create the /redfish/v1 root dir and copy output of Get ^/redfish/v1 to index.json file
     rft.printVerbose(1,"Creating /redfish/v1 resource")
     rc,r,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rft.rootPath)
@@ -310,24 +320,10 @@ def main(argv):
     with open( filePath, 'w', encoding='utf-8' ) as f:
         json.dump(d, f, indent=4) 
 
-    #Store headers into the headers.json
-    if (addHeaders is True):
-        hdrsFilePath=os.path.join(dirPath,"headers.json")
-        with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            dictHeader = dict(r.headers)
-            headerFileData = {"GET" : dictHeader}
-            json.dump(headerFileData, hf, indent=4)
+    addHeaderFile(addHeaders, r, dirPath)
 
     #Store elapsed response time into time.json
-    if (addTime is True):
-        timeFilePath=os.path.join(dirPath,"time.json")
-        with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-            elapsedTime = '{0:.2f}'.format(rft.elapsed)
-            timeFileData = {"GET_Time": elapsedTime}
-            if (addHeaders is True):
-                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-                timeFileData['HEAD_Time'] =  elapsedHeadTime
-            json.dump(timeFileData, tf, indent=4)
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
             
     #save the rootURL for later re-use  (if we were redirected, we get the redirected url here)
     rootUrl=r.url
@@ -359,24 +355,10 @@ def main(argv):
         json.dump(d, f, indent=4)
 
     #Store headers into the headers.json
-    if (addHeaders is True):
-        hdrsFilePath=os.path.join(dirPath,"headers.json")
-        with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            dictHeader = dict(r.headers)
-            headerFileData = {"GET" : dictHeader}
-            json.dump(headerFileData, hf, indent=4)
+    addHeaderFile(addHeaders, r, dirPath)
 
     #Store elapsed response time into time.json
-    if (addTime is True):
-        timeFilePath=os.path.join(dirPath,"time.json")
-        with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-            elapsedTime = '{0:.2f}'.format(rft.elapsed)
-            timeFileData = {"GET_Time": elapsedTime}
-            if (addHeaders is True):
-                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-                timeFileData['HEAD_Time'] =  elapsedHeadTime
-            json.dump(timeFileData, tf, indent=4)
-
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
 
     #get /redfish/v1/$metadata and save to mockup.   Note this is an .xml file stored as index.xml in mockup
     rft.printVerbose(1,"Creating /redfish/v1/$metadata resource")
@@ -559,23 +541,10 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
         rft.printErr("ERROR: index.json file already exists in this directory {} --continuing".format(filePath))
 
     #Store headers into the headers.json
-    if (addHeaders is True):
-        hdrsFilePath=os.path.join(dirPath,"headers.json")
-        with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            dictHeader = dict(r.headers)
-            headerFileData = {"GET" : dictHeader}
-            json.dump(headerFileData, hf, indent=4)
+    addHeaderFile(addHeaders, r, dirPath)
 
     #Store elapsed response time into time.json
-    if (addTime is True):
-        timeFilePath=os.path.join(dirPath,"time.json")
-        with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-            elapsedTime = '{0:.2f}'.format(rft.elapsed)
-            timeFileData = {"GET_Time": elapsedTime}
-            if (addHeaders is True):
-                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
-                timeFileData['HEAD_Time'] =  elapsedHeadTime
-            json.dump(timeFileData, tf, indent=4)
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
 
     #Add copyright key/value pair into index.json
     if (addCopyright is not None):
