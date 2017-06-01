@@ -46,25 +46,49 @@ def displayUsage(rft,*argv,**kwargs):
 def displayOptions(rft):
         print("")
         print("  Common OPTIONS:")
-        print("   -V,          --version           -- show {} version, and exit".format(rft.program))
-        print("   -h,          --help              -- show Usage, Options".format(rft.program))
-        print("   -v,          --verbose           -- verbose level, can repeat up to 4 times for more verbose output")
-        print("   -q,          --quiet             -- quiet mode. no progress messages are displayed")
-        print("--custom        -- custom mode. use static nav structure instead of recursive algorithm")
-        print("   -C <string>, --Copyright=<string>-- Add Copyright. The specified Copyright will be added to each resource")
-        print("   -H,          --Headers           -- Headers mode. An additional headers property will be added to each resource")
-        print("   -T,          --Time              -- Time mode. Retrieval time of each GET will be captured")
-        print("   -S,          --Secure            -- use HTTPS for all gets.   otherwise HTTP is used")
-        print("   -u <user>,   --user=<usernm>     -- username used for remote redfish authentication")
-        print("   -p <passwd>, --password=<passwd> -- password used for remote redfish authentication")
-        print("   -r <rhost>,  --rhost=<rhost>     -- remote redfish service hostname or IP:port")
-        print("   -A <Auth>,   --Auth=<auth>       -- auth method ot use: None, Basic(dflt), Session ")
-        print("   -D <directory>,--Dir=<directory> -- output mockup to directory path <directory>")
-        print("   -d <description> --description=<d> -- text description that is put in README. ex: -d \"mockup of Contoso 1U\" ")
+        print("   -V,              --version            -- show {} version, and exit".format(rft.program))
+        print("   -h,              --help               -- show Usage, Options".format(rft.program))
+        print("   -v,              --verbose            -- verbose level, can repeat up to 4 times for more verbose output")
+        print("   -q,              --quiet              -- quiet mode. no progress messages are displayed")
+        print("   --custom         --                   -- custom mode. use static nav structure instead of recursive algorithm")
+        print("   -C <string>,     --Copyright=<string> -- Add Copyright. The specified Copyright will be added to each resource")
+        print("   -H,              --Headers            -- Headers mode. An additional headers property will be added to each resource")
+        print("   -T,              --Time               -- Time mode. Retrieval time of each GET will be captured")
+        print("   -S,              --Secure             -- use HTTPS for all gets.   otherwise HTTP is used")
+        print("   -u <user>,       --user=<usernm>      -- username used for remote redfish authentication")
+        print("   -p <passwd>,     --password=<passwd>  -- password used for remote redfish authentication")
+        print("   -r <rhost>,      --rhost=<rhost>      -- remote redfish service hostname or IP:port")
+        print("   -A <Auth>,       --Auth=<auth>        -- auth method ot use: None, Basic(dflt), Session ")
+        print("   -D <directory>,  --Dir=<directory>    -- output mockup to directory path <directory>")
+        print("   -d <description> --description=<d>    -- text description that is put in README. ex: -d \"mockup of Contoso 1U\" ")
         print("")
 
 
 
+
+
+def addHeaderFile(addHeaders, r, dirPath):
+#Store headers into the headers.json
+    if (addHeaders is True):
+        hdrsFilePath = os.path.join(dirPath, "headers.json")
+        with open(hdrsFilePath, 'w', encoding='utf-8') as hf:
+            dictHeader = dict(r.headers)
+            headerFileData = {"GET":dictHeader}
+            rc = json.dump(headerFileData, hf, indent=4)
+    return rc
+
+
+def addTimeFile(addTime, addHeaders, rft, r, dirPath):
+    if (addTime is True):
+        timeFilePath = os.path.join(dirPath, "time.json")
+        with open(timeFilePath, 'w', encoding='utf-8') as tf:
+            elapsedTime = '{0:.2f}'.format(rft.elapsed)
+            timeFileData = {"GET_Time":elapsedTime}
+            if (addHeaders is True):
+                elapsedHeadTime = '{0:.2f}'.format(r.elapsed.total_seconds())
+                timeFileData['HEAD_Time'] = elapsedHeadTime
+            rc = json.dump(timeFileData, tf, indent=4)
+    return rc
 
 def main(argv):
     # Resource, links used to drive the mockup creation
@@ -108,6 +132,8 @@ def main(argv):
     rft.version="0.9.2"
     rft.releaseDate="05/28/2017"
     rft.secure="Never"
+    rft.waitTime=5
+    rft.timeout=20
     
     #initialize properties used here in main
     mockDirPath=None
@@ -220,11 +246,12 @@ def main(argv):
     rft.printVerbose(1,"description: {}".format(description))
     rft.printVerbose(1,"starting mockup creation")
 
-    #make sure directory is empty (no READ file), and create Read file
-    readmeFile=os.path.join(mockDir, "README")
-    if os.path.isfile(readmeFile) is True:
-        rft.printErr("ERROR: READM file already exists in this directory. aborting")
+    #If directory exists and is empty then continue otherwise...
+    if not os.path.isdir(mockDirPath) or os.listdir(mockDirPath):
+        rft.printErr("ERROR: Directory not empty...faint-heartedly refusing to create mockup")
         sys.exit(1)
+    
+    readmeFile=os.path.join(mockDir, "README")
 
     rfdatetime=str(datetime.datetime.now())
     rfdatetime=rfdatetime.split('.',1)[0]
@@ -250,6 +277,21 @@ def main(argv):
     filePath=os.path.join(dirPath,rfFile)
     with open( filePath, 'w', encoding='utf-8' ) as f:
         f.write(r.text)
+    #Add copyright key/value pair into index.json
+    if (addCopyright is not None):
+        if(type(d) is dict):
+            d['@Redfish.Copyright'] = addCopyright
+        else:
+            rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
+    #Store resource dictionary into index.json
+    filePath=os.path.join(dirPath,"index.json")
+    with open( filePath, 'w', encoding='utf-8' ) as f:
+        json.dump(d, f, indent=4)
+
+    addHeaderFile(addHeaders, r, dirPath)
+
+    #Store elapsed response time into time.json
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
 
     #create the /redfish/v1 root dir and copy output of Get ^/redfish/v1 to index.json file
     rft.printVerbose(1,"Creating /redfish/v1 resource")
@@ -257,6 +299,8 @@ def main(argv):
     rootv1data = d
     if(rc!=0):
         rft.printErr("ERROR: Cant read root service:  GET /redfish/ from rhost. aborting")
+        #TODO jgiles print r.status_code to return status
+        rft.printErr("Status Code: {} ".format(r.status_code))
         sys.exit(1)
     dirPath=os.path.join(mockDir, "redfish", "v1")
     if( rfMakeDir(rft, dirPath) is False ):
@@ -265,7 +309,22 @@ def main(argv):
     filePath=os.path.join(dirPath,rfFile)
     with open( filePath, 'w', encoding='utf-8' ) as f:
         f.write(r.text)
+    #Add copyright key/value pair into index.json
+    if (addCopyright is not None):
+        if(type(d) is dict):
+            d['@Redfish.Copyright'] = addCopyright
+        else:
+            rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
+    #Store resource dictionary into index.json
+    filePath=os.path.join(dirPath,"index.json")
+    with open( filePath, 'w', encoding='utf-8' ) as f:
+        json.dump(d, f, indent=4) 
 
+    addHeaderFile(addHeaders, r, dirPath)
+
+    #Store elapsed response time into time.json
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
+            
     #save the rootURL for later re-use  (if we were redirected, we get the redirected url here)
     rootUrl=r.url
     rootRes=d
@@ -284,7 +343,23 @@ def main(argv):
         filePath=os.path.join(dirPath,rfFile)
         with open( filePath, 'w', encoding='utf-8' ) as f:
             f.write(r.text)
-            
+        #Add copyright key/value pair into index.json
+        if (addCopyright is not None):
+            if(type(d) is dict):
+                d['@Redfish.Copyright'] = addCopyright
+        else:
+            rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
+    #Store resource dictionary into index.json
+    filePath=os.path.join(dirPath,"index.json")
+    with open( filePath, 'w', encoding='utf-8' ) as f:
+        json.dump(d, f, indent=4)
+
+    #Store headers into the headers.json
+    addHeaderFile(addHeaders, r, dirPath)
+
+    #Store elapsed response time into time.json
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
+
     #get /redfish/v1/$metadata and save to mockup.   Note this is an .xml file stored as index.xml in mockup
     rft.printVerbose(1,"Creating /redfish/v1/$metadata resource")
     api="$metadata"
@@ -466,32 +541,21 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
         rft.printErr("ERROR: index.json file already exists in this directory {} --continuing".format(filePath))
 
     #Store headers into the headers.json
-    if (addHeaders is True):
-        hdrsFilePath=os.path.join(dirPath,"headers.json")
-        with open( hdrsFilePath, 'w', encoding='utf-8' ) as hf:
-            #TODO Q how to understand types/dicts better
-            dictHeader = dict(r.headers)
-            headerFileData = {"GET" : dictHeader}
-            json.dump(headerFileData, hf, indent=4)
+    addHeaderFile(addHeaders, r, dirPath)
 
     #Store elapsed response time into time.json
-    if (addTime is True):
-        timeFilePath=os.path.join(dirPath,"time.json")
-        with open( timeFilePath, 'w', encoding='utf-8' ) as tf:
-            elapsedTime = '{0:.2f}'.format(rft.elapsed)
-            timeFileData = {"GET_Time": elapsedTime}
-            json.dump(timeFileData, tf, indent=4)
+    addTimeFile(addTime, addHeaders, rft, r, dirPath)
 
     #Add copyright key/value pair into index.json
     if (addCopyright is not None):
         if(type(d) is dict):
-            d['@Redfish.copyright'] = addCopyright
+            d['@Redfish.Copyright'] = addCopyright
         else:
             rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) #TODO change to .json?
+        json.dump(d, f, indent=4) 
 
     return(rc, r, j, d )
 
@@ -554,4 +618,6 @@ if __name__ == "__main__":
 '''
 
 '''
+
+
 
