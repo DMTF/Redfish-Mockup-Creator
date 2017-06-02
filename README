@@ -1,0 +1,6 @@
+Redfish Service state stored in Redfish Mockup Format
+Program: redfishMockupCreate,  ver: 0.9.2
+Created: 2017-05-05 16:40:53
+rhost:  10.208.63.197
+Description: 
+Commandline: python3.4 .\redfishMockupCreate.py -r 10.208.63.197 -S -u root -p calvin -A Basic
