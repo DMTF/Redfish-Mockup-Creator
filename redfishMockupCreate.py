@@ -61,6 +61,7 @@ def displayOptions(rft):
         print("   -A <Auth>,       --Auth=<auth>        -- auth method ot use: None, Basic(dflt), Session ")
         print("   -D <directory>,  --Dir=<directory>    -- output mockup to directory path <directory>")
         print("   -d <description> --description=<d>    -- text description that is put in README. ex: -d \"mockup of Contoso 1U\" ")
+
         print("")
 
 
