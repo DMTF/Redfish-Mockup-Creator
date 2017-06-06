@@ -139,7 +139,7 @@ def main(argv):
     #initialize properties used here in main
     mockDirPath=None
     mockDir=None
-    defaultDir="MockCreate_DfltDir"
+    defaultDir="rfMockUpDfltDir"
     description=""
     rfFile="index.json"
     rfFileHeaders="headers.json"
