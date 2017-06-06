@@ -42,7 +42,7 @@ def displayUsage(rft,*argv,**kwargs):
         rft.printErr("  Usage:",noprog=True)
         rft.printErr("   {} [-VhvqS] -u<user> -p<passwd> -r<rhost[<port>] [-A <auth>] [-D <dir>]",prepend="  ")
         rft.printErr("   where -S is https",     prepend="  ")
-              
+
 def displayOptions(rft):
         print("")
         print("  Common OPTIONS:")
@@ -135,10 +135,11 @@ def main(argv):
     rft.secure="Never"
     rft.waitTime=5
     rft.timeout=20
-    
+
     #initialize properties used here in main
     mockDirPath=None
     mockDir=None
+    defaultDir="MockCreate_DfltDir"
     description=""
     rfFile="index.json"
     rfFileHeaders="headers.json"
@@ -148,8 +149,8 @@ def main(argv):
     addHeaders=False
     addTime=False
     #Exception List required given Dell 13g iDRAC does not include odata.type with expanded Log
-    exceptionList = ['iDRAC.Embedded.1/Logs/'] 
-    
+    exceptionList = ['iDRAC.Embedded.1/Logs/']
+
     try:
         opts, args = getopt.gnu_getopt(argv[1:],"VhvqSHTu:p:r:A:C:D:d:",
                         ["Version", "help", "quiet", "Secure=",
@@ -159,7 +160,7 @@ def main(argv):
         rft.printErr("Error parsing options")
         displayUsage(rft)
         sys.exit(1)
-        
+
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             rft.help=True
@@ -234,12 +235,26 @@ def main(argv):
         rft.printErr("ERROR: Cant find Redfish Service at rhost sending GET /redfish  request. aborting")
         sys.exit(1)
 
-    # check if directory redfish is there.  If not, use current working directory
-    if mockDirPath is None:
-        mockDirPath=os.getcwd()
-
-    #create the full path to the top directory holding the Mockup  
-    mockDir=os.path.realpath(mockDirPath) #creates real full path including path for CWD to the -D<mockDir> dir path
+    # If directory was specified, check and create; Otherwise do the same the default directory
+    if mockDirPath is not None:
+        mockDir=os.path.realpath(mockDirPath)
+        #  If the dir exists and non-empty fail 
+        if os.path.isdir(mockDir) and os.listdir(mockDir):
+            rft.printErr("ERROR: Directory not empty...faint-heartedly refusing to create mockup")
+            sys.exit(1)
+        # Else create it or fail    
+        elif( rfMakeDir(rft, mockDir) is False ):
+            rft.printErr("ERROR: cant create /redfish directory. aborting")
+            sys.exit(1)
+    else:
+        mockDirPath=os.path.join(os.getcwd(), defaultDir) #Directory created is "MockCrDfltDir"
+        mockDir=os.path.realpath(mockDirPath)
+        if os.path.isdir(mockDir) and os.listdir(mockDir):
+            rft.printErr("ERROR: Directory not empty...faint-heartedly refusing to create mockup")
+            sys.exit(1)
+        elif( rfMakeDir(rft, mockDir) is False ):
+            rft.printErr("ERROR: cant create /redfish directory. aborting")
+            sys.exit(1)
 
     # print out rhost and directory path
     rft.printVerbose(1,"rhost: {}".format(rft.rhost))
@@ -247,11 +262,6 @@ def main(argv):
     rft.printVerbose(1,"description: {}".format(description))
     rft.printVerbose(1,"starting mockup creation")
 
-    #If directory exists and is empty then continue otherwise...
-    if not os.path.isdir(mockDirPath) or os.listdir(mockDirPath):
-        rft.printErr("ERROR: Directory not empty...faint-heartedly refusing to create mockup")
-        sys.exit(1)
-    
     readmeFile=os.path.join(mockDir, "README")
 
     rfdatetime=str(datetime.datetime.now())
@@ -319,17 +329,17 @@ def main(argv):
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
-        json.dump(d, f, indent=4) 
+        json.dump(d, f, indent=4)
 
     addHeaderFile(addHeaders, r, dirPath)
 
     #Store elapsed response time into time.json
     addTimeFile(addTime, addHeaders, rft, r, dirPath)
-            
+
     #save the rootURL for later re-use  (if we were redirected, we get the redirected url here)
     rootUrl=r.url
     rootRes=d
-           
+
     #get /redfish/v1/odata and save to mockup
     rft.printVerbose(1,"Creating /redfish/v1/odata resource")
     api="odata"
