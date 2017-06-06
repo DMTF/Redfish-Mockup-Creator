@@ -130,7 +130,7 @@ def main(argv):
     # set default verbose level to 1.  so -v will cause verbose level to go to 2
     rft.verbose=1
     rft.program="redfishMockupCreate"
-    rft.version="0.9.2"
+    rft.version="0.9.3"
     rft.releaseDate="05/28/2017"
     rft.secure="Never"
     rft.waitTime=5
@@ -310,7 +310,7 @@ def main(argv):
     rootv1data = d
     if(rc!=0):
         rft.printErr("ERROR: Cant read root service:  GET /redfish/ from rhost. aborting")
-        #TODO jgiles print r.status_code to return status
+        #print r.status_code for more info on failure
         rft.printErr("Status Code: {} ".format(r.status_code))
         sys.exit(1)
     dirPath=os.path.join(mockDir, "redfish", "v1")
