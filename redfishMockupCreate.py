@@ -70,6 +70,7 @@ def displayOptions(rft):
 
 def addHeaderFile(addHeaders, r, dirPath):
 #Store headers into the headers.json
+    rc = 0
     if (addHeaders is True):
         hdrsFilePath = os.path.join(dirPath, "headers.json")
         with open(hdrsFilePath, 'w', encoding='utf-8') as hf:
@@ -80,6 +81,7 @@ def addHeaderFile(addHeaders, r, dirPath):
 
 
 def addTimeFile(addTime, addHeaders, rft, r, dirPath):
+    rc = 0
     if (addTime is True):
         timeFilePath = os.path.join(dirPath, "time.json")
         with open(timeFilePath, 'w', encoding='utf-8') as tf:
@@ -137,6 +139,7 @@ def main(argv):
     rft.timeout=20
 
     #initialize properties used here in main
+    absPath=None
     mockDirPath=None
     mockDir=None
     defaultDir="rfMockUpDfltDir"

@@ -34,6 +34,16 @@ As a result, it is a way to take a snapshot of a system
    -d <description> --description=<d> -- text description that is put in README. ex: -d "mockup of Contoso 1U"
 ```
 
+##  Python Requirement
+**The `requests` package is required.**
+
+- On windoes, navigate to your Python folder via CMD.
+
+	`cd C:\Python36\`
+- run the command line
+
+    `python -m pip install requests`
+
 ##  Example
 ### Create a directory that is the name of the mockup you are creating
 * fyi-mockup-creator wont create the directory, if the dir doesn’t exist, it exits with error
