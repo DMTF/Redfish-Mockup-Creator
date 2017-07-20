@@ -37,7 +37,7 @@ As a result, it is a way to take a snapshot of a system
 ##  Python Requirement
 **The `requests` package is required.**
 
-- On windoes, navigate to your Python folder via CMD.
+- On Windows, navigate to your Python folder via CMD.
 
 	`cd C:\Python36\`
 - run the command line
