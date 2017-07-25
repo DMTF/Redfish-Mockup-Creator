@@ -9,7 +9,6 @@
 import os
 import sys
 import getopt
-import re
 import json
 from redfishtoollib  import RfTransport
 # uses same transport that is used by redfishtool.
@@ -188,7 +187,7 @@ def main(argv):
         elif opt in ("-S", "--Secure"):
             rft.secure="Always"
         elif opt in ("-q", "--quiet"):
-            rft.quiet=true
+            rft.quiet=True
         elif opt in ("--custom"):
             custom=True
         elif opt in ("-C", "--Copyright"):
@@ -580,6 +579,7 @@ def readResourceMkdirCreateIndxFile(rft, rootUrl, mockDir, link, addCopyright, a
 def addSecondLevelResource(rft, rootUrl, mockDir, sublinklist, resd, addCopyright, addHeaders, addTime):
     if( len(sublinklist)==0 ):
         return(0,None,False,None)
+    rc, r, j, d = 0, None, False, None
     for rlink2 in sublinklist:   #(ex Processors, Power)
         if( rlink2 in resd):
             link2=resd[rlink2]
