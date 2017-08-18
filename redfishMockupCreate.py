@@ -360,8 +360,8 @@ def main(argv):
         if (addCopyright is not None):
             if(type(d) is dict):
                 d['@Redfish.Copyright'] = addCopyright
-        else:
-            rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
+            else:
+                rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
