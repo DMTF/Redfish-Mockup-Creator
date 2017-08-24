@@ -1133,11 +1133,20 @@ class RfTransport():
         odataTypeMatch = re.compile('^#([a-zA-Z0-9]*)\.([a-zA-Z0-9\._]*)\.([a-zA-Z0-9]*)$')  
         resourceMatch = re.match(odataTypeMatch, resourceOdataType)
         if(resourceMatch is None):
-            rft.printErr("Transport:parseOdataType: Error parsing @odata.type")
-            return(None,None,None)
-        namespace=resourceMatch.group(1)
-        version=resourceMatch.group(2)
-        resourceType=resourceMatch.group(3)
+            # try with no version component
+            odataTypeMatch = re.compile('^#([a-zA-Z0-9]*)\.([a-zA-Z0-9]*)$')
+            resourceMatch = re.match(odataTypeMatch, resourceOdataType)
+            if (resourceMatch is None):
+                rft.printErr("Transport:parseOdataType: Error parsing @odata.type")
+                return(None,None,None)
+            else:
+                namespace = resourceMatch.group(1)
+                version = None
+                resourceType = resourceMatch.group(2)
+        else:
+            namespace=resourceMatch.group(1)
+            version=resourceMatch.group(2)
+            resourceType=resourceMatch.group(3)
     
         return(namespace, version, resourceType)
 
