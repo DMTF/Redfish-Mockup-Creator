@@ -360,8 +360,8 @@ def main(argv):
         if (addCopyright is not None):
             if(type(d) is dict):
                 d['@Redfish.Copyright'] = addCopyright
-        else:
-            rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
+            else:
+                rft.printErr("BUG: Expecting a dictionary for resource {} but got type: {}".format(absPath, type(d)))
     #Store resource dictionary into index.json
     filePath=os.path.join(dirPath,"index.json")
     with open( filePath, 'w', encoding='utf-8' ) as f:
@@ -441,25 +441,34 @@ def main(argv):
                         rft.printErr("ERROR: Error processing 2nd level resource (9) --continuing")
     else:
         # Starting recursive call.
-        recursive_call(rft,rootv1data,rootUrl,mockDir, addCopyright, addHeaders, addTime,exceptionList)
+        processed = set()
+        recursive_call(rft, rootv1data, rootUrl, mockDir, processed, addCopyright, addHeaders, addTime,exceptionList)
 
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
 
 
-def recursive_call(rft,rs,rootUrl,mockDir, addCopyright, addHeaders, addTime, exceptionList):
+def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeaders, addTime, exceptionList):
     # get_nav_and_collection_properties() method will go and fetch any nav or collection properties if present.
     # If none returns None. Indicating that there are no further down navigations.
     d = get_nav_and_collection_properties(rft, rs,exceptionList)
     if d is not None:
         for x in d:
+            if '@odata.id' in x:
+                link = x.get('@odata.id')
+                if link in processed:
+                    rft.printVerbose(1, "   Skipping already processed resource at: {}".format(link))
+                    rft.printVerbose(0, "WARNING: Possible recursive reference to resource at {}".format(link))
+                    continue
+                else:
+                    processed.add(link)
             rft.printVerbose(1,"   Creating resource at: {}".format(x["@odata.id"]))
             # readResourceMkdirCreateIndxFile(addCopyright, addHeaders, addTime, ) method will create a directory and index.json file for the resource link
             rc,r,j,d=readResourceMkdirCreateIndxFile(rft,rootUrl, mockDir, x, addCopyright, addHeaders, addTime)
             if(rc!=0):
                 rft.printErr("ERROR: got error reading resource --continuing. link: {}".format(x))    
             # Recursively calling further tree nodes which will fetch data.
-            recursive_call(rft,d,rootUrl,mockDir, addCopyright, addHeaders, addTime, exceptionList)
+            recursive_call(rft, d, rootUrl, mockDir, processed, addCopyright, addHeaders, addTime, exceptionList)
     else:
         return (None)
 
