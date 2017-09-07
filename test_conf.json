@@ -1,0 +1,5 @@
+{
+  "test": {
+    "command": "$interpreter redfishMockupCreate.py -r $target_system -u $username -p $password $secure -D mockup -d 'test mockup creation from Redfish-Test-Framework'"
+  }
+}
