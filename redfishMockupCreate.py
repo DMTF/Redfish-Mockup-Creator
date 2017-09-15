@@ -472,12 +472,28 @@ def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeader
     else:
         return (None)
 
+
+def get_location_uri_as_odata_id(rft, location):
+    rft.printVerbose(2, '   Processing location resource {}'.format(location))
+    odata_id = None
+    if 'Uri' in location:
+        uri = location.get('Uri')
+        if isinstance(uri, str):
+            rft.printVerbose(2, '   Found Location Uri {} in resource'.format(uri))
+            odata_id = {'@odata.id': uri}
+    return odata_id
+
+
 def get_nav_and_collection_properties(rft,rs, exceptionList):    
     if not isinstance(rs,dict):
         return (None)
     if "@odata.id" not in rs:
         return (None)
     nav_list = list()
+    rs_type = None
+    if '@odata.type' in rs:
+        _, _, rs_type = rft.parseOdataType(rft, rs)
+    location_uri_type_list = ['JsonSchemaFile', 'MessageRegistryFile']
     # Seperate rule for Exception list. 
     if ( any(x in rs['@odata.id']  for x in exceptionList ) ) :
         if isCollection(rs):
@@ -488,26 +504,32 @@ def get_nav_and_collection_properties(rft,rs, exceptionList):
                             nav_list.append(i)
     else:
         for k,v in rs.items():
-           # Checking if values have keys "@odata.id" only or not.
-           if isinstance(v,list):
-               for x in v:
-                   if isinstance(x,dict):
-                       # This is to make sure there is only one key-value pair and it has "@odata.id" as key
-                       if len(x) == 1 and '@odata.id' in x.keys():
-                           nav_list.append(x)
-                       elif len(x) >1 and '@odata.type' in x:
-                           ns,ver,resType=rft.parseOdataType(rft,x)
-                           if resType == 'LogEntry':
-                               nav_list.append(x)
-                                       
-           elif isinstance(v,dict):
-               # This is to make sure there is only one key-value pair and it has "@odata.id" as key
-               if len(v) == 1 and '@odata.id' in v.keys():
-                   nav_list.append(v)
-               elif len(v) >1 and '@odata.type' in v:
-                   ns,ver,resType=rft.parseOdataType(rft,v)
-                   if resType == 'LogEntry':
-                       nav_list.append(v)
+            # Checking if values have keys "@odata.id" only or not.
+            if isinstance(v,list):
+                for x in v:
+                    if isinstance(x,dict):
+                        # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+                        if len(x) == 1 and '@odata.id' in x.keys():
+                            nav_list.append(x)
+                        elif len(x) >1 and '@odata.type' in x:
+                            ns,ver,resType=rft.parseOdataType(rft,x)
+                            if resType == 'LogEntry':
+                                nav_list.append(x)
+                        # handle case of location uri references to JSON schemas and messages registries
+                        elif k == 'Location' and rs_type in location_uri_type_list:
+                            odata_id = get_location_uri_as_odata_id(rft, x)
+                            if odata_id is not None:
+                                rft.printVerbose(2, '   Appending {} to nav_list'.format(odata_id))
+                                nav_list.append(odata_id)
+
+            elif isinstance(v,dict):
+                # This is to make sure there is only one key-value pair and it has "@odata.id" as key
+                if len(v) == 1 and '@odata.id' in v.keys():
+                    nav_list.append(v)
+                elif len(v) >1 and '@odata.type' in v:
+                    ns,ver,resType=rft.parseOdataType(rft,v)
+                    if resType == 'LogEntry':
+                        nav_list.append(v)
     
     if not nav_list:
         return (None)                   # If the list is empty, it means there are no navigation properties.
