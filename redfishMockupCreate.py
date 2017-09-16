@@ -484,6 +484,23 @@ def get_location_uri_as_odata_id(rft, location):
     return odata_id
 
 
+def get_items(rft, rs):
+    for k, v in rs.items():
+        if k == 'Oem' and isinstance(v, dict):
+            # If there is an "Oem" property, return the items under each Oem identifier
+            for oem_id_k, oem_id_v in v.items():
+                rft.printVerbose(2, '   Getting items from Oem identifier {}'.format(oem_id_k))
+                if isinstance(oem_id_v, dict):
+                    for oem_item_k, oem_item_v in oem_id_v.items():
+                        rft.printVerbose(2, '   Looking at {} Oem item {}: {}'
+                                         .format(oem_id_k, oem_item_k, oem_item_v))
+                        yield (oem_item_k, oem_item_v)
+                yield (oem_id_k, oem_id_v)
+        else:
+            # The non-Oem case
+            yield (k, v)
+
+
 def get_nav_and_collection_properties(rft,rs, exceptionList):    
     if not isinstance(rs,dict):
         return (None)
@@ -503,7 +520,7 @@ def get_nav_and_collection_properties(rft,rs, exceptionList):
                         if '@odata.id' in i:
                             nav_list.append(i)
     else:
-        for k,v in rs.items():
+        for k, v in get_items(rft, rs):
             # Checking if values have keys "@odata.id" only or not.
             if isinstance(v,list):
                 for x in v:
