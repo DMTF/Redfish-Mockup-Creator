@@ -458,7 +458,6 @@ def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeader
                 link = x.get('@odata.id')
                 if link in processed:
                     rft.printVerbose(1, "   Skipping already processed resource at: {}".format(link))
-                    rft.printVerbose(0, "WARNING: Possible recursive reference to resource at {}".format(link))
                     continue
                 else:
                     processed.add(link)
@@ -484,21 +483,20 @@ def get_location_uri_as_odata_id(rft, location):
     return odata_id
 
 
-def get_items(rft, rs):
+def get_items(rs):
+    """
+    Generator function that recursively finds all key/value pairs in the given resource (dictionary)
+    :param rs: resource (dictionary) to inspect
+    :return: list of key/value pairs found in resource
+    """
     for k, v in rs.items():
-        if k == 'Oem' and isinstance(v, dict):
-            # If there is an "Oem" property, return the items under each Oem identifier
-            for oem_id_k, oem_id_v in v.items():
-                rft.printVerbose(2, '   Getting items from Oem identifier {}'.format(oem_id_k))
-                if isinstance(oem_id_v, dict):
-                    for oem_item_k, oem_item_v in oem_id_v.items():
-                        rft.printVerbose(2, '   Looking at {} Oem item {}: {}'
-                                         .format(oem_id_k, oem_item_k, oem_item_v))
-                        yield (oem_item_k, oem_item_v)
-                yield (oem_id_k, oem_id_v)
-        else:
-            # The non-Oem case
-            yield (k, v)
+        if isinstance(v, list):
+            for x in v:
+                if isinstance(x, dict):
+                    yield from get_items(x)
+        elif isinstance(v, dict):
+            yield from get_items(v)
+        yield (k, v)
 
 
 def get_nav_and_collection_properties(rft,rs, exceptionList):    
@@ -520,7 +518,8 @@ def get_nav_and_collection_properties(rft,rs, exceptionList):
                         if '@odata.id' in i:
                             nav_list.append(i)
     else:
-        for k, v in get_items(rft, rs):
+        for k, v in get_items(rs):
+            rft.printVerbose(2, '   Checking for nav properties in item with k = {}, v = {}'.format(k, v))
             # Checking if values have keys "@odata.id" only or not.
             if isinstance(v,list):
                 for x in v:
