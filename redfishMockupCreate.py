@@ -16,6 +16,7 @@ from redfishtoollib  import RfTransport
 import errno
 import datetime
 from urllib.parse import urlparse
+import xml.etree.ElementTree as ET
 
 
 # rootservice navigation properties
@@ -390,24 +391,30 @@ def main(argv):
         filePath=os.path.join(dirPath,"index.xml")
         with open( filePath, 'w', encoding='utf-8' ) as f:
             f.write(r.text)
-        for item in r.text.split('\n'):
-            if item.find('<edmx:Reference') > -1:
-                uri = item.split('"')[1]
-                if not bool(urlparse(uri).netloc):
-                    # gets if uri is local
-                    dirPath=os.path.join(mockDir, *uri.split('/')[:-1])
-                    if( rfMakeDir(rft, dirPath) is False ):
-                        rft.printErr("ERROR: cant create directory: {}. aborting".format(dirPath))
-                        sys.exit(1)
-                    rc,innerr,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', rootUrl, relPath=uri, jsonData=False,
-                                                    headersInput=hdrs)
-                    if(rc!=0):
-                        rft.printErr("ERROR: Cant get {}, continuing w/o".format(uri))
-                    else:
-                        rft.printVerbose(1,"Start Creating service xml: {}".format(uri))
-                        filePath=os.path.join(mockDir, *uri.split('/'))
-                        with open( filePath, 'w', encoding='utf-8' ) as f:
-                            f.write(innerr.text)
+        tree = ET.ElementTree(ET.fromstring(r.text))
+        root = tree.getroot()
+        for ref in root:
+            if 'Reference' not in str(ref.tag):
+                continue
+            for tag in ['uri', 'Uri', 'URI']:
+                uri = ref.attrib.get(tag)
+                if uri is not None:
+                    break
+            if not bool(urlparse(uri).netloc):
+                # gets if uri is local
+                dirPath=os.path.join(mockDir, *uri.split('/')[:-1])
+                if( rfMakeDir(rft, dirPath) is False ):
+                    rft.printErr("ERROR: cant create directory: {}. aborting".format(dirPath))
+                    sys.exit(1)
+                rc,innerr,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', rootUrl, relPath=uri, jsonData=False,
+                                                headersInput=hdrs)
+                if(rc!=0):
+                    rft.printErr("ERROR: Cant get {}, continuing w/o".format(uri))
+                else:
+                    rft.printVerbose(1,"Start Creating service xml: {}".format(uri))
+                    filePath=os.path.join(mockDir, *uri.split('/'))
+                    with open( filePath, 'w', encoding='utf-8' ) as f:
+                        f.write(innerr.text)
 
     # now make create subdirectories for rootService
     # for res in rootLinks:
