@@ -30,6 +30,7 @@ As a result, it is a way to take a snapshot of a system
    -p <passwd>, --password=<passwd>   -- password used for remote redfish authentication
    -r <rhost>,  --rhost=<rhost>       -- remote redfish service hostname or IP:port
    -A <Auth>,   --Auth=<auth>         -- auth method ot use: None, Basic(dflt), Session
+   -M           --ScrapeMetadata      -- Scrape XML stored locally on the server 
    -D <directory>,--Dir=<directory>   -- output mockup to directory path <directory>
    -d <description> --description=<d> -- text description that is put in README. ex: -d "mockup of Contoso 1U"
 ```

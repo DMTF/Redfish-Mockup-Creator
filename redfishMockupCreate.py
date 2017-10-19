@@ -15,7 +15,8 @@ from redfishtoollib  import RfTransport
 # only the program name, date, and version is changed
 import errno
 import datetime
-
+from urllib.parse import urlparse
+import xml.etree.ElementTree as ET
 
 
 # rootservice navigation properties
@@ -102,6 +103,7 @@ def main(argv):
     # parse main options
     # write README file to top of mockup directory
     # create /redfish, /redfish/v1, /redfish/v1/odata, and /redfish/v1/$metadata folders/files
+    # create $metadata resources
     # create folders/files for apis under root
     #  for res in rootLinks:  (eg Systems, AccountService)
     #    mkdir ./res
@@ -150,12 +152,13 @@ def main(argv):
     addCopyright=None
     addHeaders=False
     addTime=False
+    scrapeMetadata=False
     #Exception List required given Dell 13g iDRAC does not include odata.type with expanded Log
     exceptionList = ['iDRAC.Embedded.1/Logs/']
 
     try:
-        opts, args = getopt.gnu_getopt(argv[1:],"VhvqSHTu:p:r:A:C:D:d:",
-                        ["Version", "help", "quiet", "Secure=",
+        opts, args = getopt.gnu_getopt(argv[1:],"VhvqMSHTu:p:r:A:C:D:d:",
+                        ["Version", "help", "quiet", "ScrapeMetadata", "Secure=",
                          "user=", "password=", "rhost=","Auth=",
                          "custom", "Copyright=", "Headers", "Time", "Dir=, description=]"])
     except getopt.GetoptError:
@@ -194,6 +197,8 @@ def main(argv):
             addCopyright=arg
         elif opt in ("-H", "--Headers"):
             addHeaders=True
+        elif opt in ("-M", "--ScrapeMetadata"):
+            scrapeMetadata=True
         elif opt in ("-T", "--Time"):
             addTime=True
         elif opt in ("-A", "--Auth"):           # specify authentication type
@@ -390,6 +395,41 @@ def main(argv):
         filePath=os.path.join(dirPath,"index.xml")
         with open( filePath, 'w', encoding='utf-8' ) as f:
             f.write(r.text)
+        if scrapeMetadata:
+            try:
+                tree = ET.ElementTree(ET.fromstring(r.text))
+                root = tree.getroot()
+            except Exception:
+                rft.printErr("ERROR: cant parse /redfish/v1/$metadata, cannot scrape the metadata for xml".format(str(ref.tag)))
+                root = []
+            # start at edmx -> reference
+            for ref in root:
+                if 'Reference' not in str(ref.tag):
+                    if 'reference' in str(ref.tag).lower():
+                        rft.printErr("Warning: $metadata tags are Case-Sensitive, found: {}".format(str(ref.tag)))
+                    else:
+                        continue
+                for tag in ['uri', 'Uri', 'URI']:
+                    if tag != 'Uri':
+                        rft.printErr("Warning: Uri attribute is case-sensitive, found: {}".format(str(tag)))
+                    uri = ref.attrib.get(tag)
+                    if uri is not None:
+                        break
+                if not bool(urlparse(uri).netloc):
+                    # gets if uri is local
+                    dirPath=os.path.join(mockDir, *uri.split('/')[:-1])
+                    if( rfMakeDir(rft, dirPath) is False ):
+                        rft.printErr("ERROR: cant create directory: {}. aborting".format(dirPath))
+                        sys.exit(1)
+                    rc,innerr,j,d=rft.rftSendRecvRequest(rft.UNAUTHENTICATED_API, 'GET', rootUrl, relPath=uri, jsonData=False,
+                                                    headersInput=hdrs)
+                    if(rc!=0):
+                        rft.printErr("ERROR: Cant get {}, continuing w/o".format(uri))
+                    else:
+                        rft.printVerbose(1,"Start Creating service xml: {}".format(uri))
+                        filePath=os.path.join(mockDir, *uri.split('/'))
+                        with open( filePath, 'w', encoding='utf-8' ) as f:
+                            f.write(innerr.text)
 
     # now make create subdirectories for rootService
     # for res in rootLinks:
