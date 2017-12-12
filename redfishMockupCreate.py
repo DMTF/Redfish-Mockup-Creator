@@ -78,12 +78,36 @@ def addHeaderFile(addHeaders, r, dirPath):
             rc = json.dump(headerFileData, hf, indent=4)
     return rc
 
+allResponseTimes = {}
+
+def genTimeStatistics(mockupDir):
+    # Using all previous response times, generate statistics
+    results = {
+            'minResponseTime': (9999, None),
+            'maxResponseTime': (0, None),
+            'averageResponseTime': 0,
+            'totalResponseTime': 0
+            }
+
+    for item in allResponseTimes:
+        time = allResponseTimes[item]
+        uri = item.replace(mockupDir, '')
+        results['totalResponseTime'] += time
+        results['minResponseTime'] = (time, uri) if time < results['minResponseTime'][0] else results['minResponseTime']
+        results['maxResponseTime'] = (time, uri) if time > results['maxResponseTime'][0] else results['maxResponseTime']
+
+    results['averageResponseTime'] = round(results['totalResponseTime'] / len(allResponseTimes), 3)
+    results['totalResponseTime'] = round(results['totalResponseTime'], 3)
+    results['minResponseTime'] = (round(results['minResponseTime'][0], 3), results['minResponseTime'][1])
+    results['maxResponseTime'] = (round(results['maxResponseTime'][0], 3), results['maxResponseTime'][1])
+    return results
 
 def addTimeFile(addTime, addHeaders, rft, r, dirPath):
     rc = 0
     if (addTime is True):
         timeFilePath = os.path.join(dirPath, "time.json")
         with open(timeFilePath, 'w', encoding='utf-8') as tf:
+            allResponseTimes[dirPath] = rft.elapsed
             elapsedTime = '{0:.2f}'.format(rft.elapsed)
             timeFileData = {"GET_Time":elapsedTime}
             if (addHeaders is True):
@@ -443,6 +467,12 @@ def main(argv):
         # Starting recursive call.
         processed = set()
         recursive_call(rft, rootv1data, rootUrl, mockDir, processed, addCopyright, addHeaders, addTime,exceptionList)
+
+    stats = genTimeStatistics(mockDir)
+    with open(readmeFile, 'a', encoding='utf-8') as readf:
+        for item in stats:
+            print("{}: {}\n".format(item, stats[item]))
+            readf.write("{}: {}\n".format(item, stats[item]))
 
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
