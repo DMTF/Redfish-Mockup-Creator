@@ -89,6 +89,9 @@ def genTimeStatistics(mockupDir):
             'totalResponseTime': 0
             }
 
+    if len(allResponseTimes) < 1:
+        return {}
+
     for item in allResponseTimes:
         time = allResponseTimes[item]
         uri = item.replace(mockupDir, '')
@@ -468,11 +471,12 @@ def main(argv):
         processed = set()
         recursive_call(rft, rootv1data, rootUrl, mockDir, processed, addCopyright, addHeaders, addTime,exceptionList)
 
-    stats = genTimeStatistics(mockDir)
-    with open(readmeFile, 'a', encoding='utf-8') as readf:
-        for item in stats:
-            print("{}: {}\n".format(item, stats[item]))
-            readf.write("{}: {}\n".format(item, stats[item]))
+    if addTime:
+        stats = genTimeStatistics(mockDir)
+        with open(readmeFile, 'a', encoding='utf-8') as readf:
+            for item in stats:
+                print("{}: {}\n".format(item, stats[item]))
+                readf.write("{}: {}\n".format(item, stats[item]))
 
     rft.printVerbose(1," {} Completed creating mockup".format(rft.program))
     sys.exit(0)
