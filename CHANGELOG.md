@@ -1,5 +1,11 @@
-
 # Change Log
+
+## [1.0.0] - 2018-02-02
+- Added support for getting time statistics when collecting resources
+- Added support for pulling the $metadata resource
+- Added support for pulling the JSON Schema repository
+- Added support for pulling OEM resources
+- Fixed @odata.type parsing to include support for no versioning
 
 ## [0.9.3] - 2017-06-05
 - Cleaning help options
