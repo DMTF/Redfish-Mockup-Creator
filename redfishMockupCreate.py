@@ -2,7 +2,7 @@
 # Copyright 2016 Distributed Management Task Force, Inc. All rights reserved.
 # License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-Mockup-Creator/LICENSE.md
 
-# redfishMockupCreate:  ver 0.9.1
+# redfishMockupCreate
 #
 # contains:
 #
@@ -160,8 +160,8 @@ def main(argv):
     # set default verbose level to 1.  so -v will cause verbose level to go to 2
     rft.verbose=1
     rft.program="redfishMockupCreate"
-    rft.version="0.9.3"
-    rft.releaseDate="05/28/2017"
+    rft.version="1.0.0"
+    rft.releaseDate="02/02/2018"
     rft.secure="Never"
     rft.waitTime=5
     rft.timeout=20
