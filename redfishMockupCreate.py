@@ -167,8 +167,8 @@ def main(argv):
     # set default verbose level to 1.  so -v will cause verbose level to go to 2
     rft.verbose = 1
     rft.program = "redfishMockupCreate"
-    rft.version = "1.0.0"
-    rft.releaseDate = "02/02/2018"
+    rft.version = "1.0.1"
+    rft.releaseDate = "08/03/2018"
     rft.secure = "Never"
     rft.waitTime = 5
     rft.timeout = 20

@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.1] - 2018-08-03
+- Fixed print statement usage for when an error is encountered while accessing $metadata
+- Reformatted code to be PEP8 conformant
+
 ## [1.0.0] - 2018-02-02
 - Added support for getting time statistics when collecting resources
 - Added support for pulling the $metadata resource
