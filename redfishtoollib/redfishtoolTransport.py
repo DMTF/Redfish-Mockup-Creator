@@ -3,7 +3,7 @@
 # License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfishtool/blob/master/LICENSE.md
 
 # redfishtool:  redfishtoolTransport.py
-# v0.9.3
+#
 # Contents:
 # 1. Class RfSessionAuth --  holds auto-created session Auth info.  'requests' calls to get credentials
 # 2. Class RfTransport -- has the generic functions to send/receive http requests, generic print functions, etc  
@@ -58,8 +58,8 @@ class RfTransport():
     def __init__(self):
         # constant parameters-- these dont change and are not updated
         self.program="redfishtool"              # program name (in case we want to change it)
-        self.version="0.9.3"                    # this redfishtool version
-        self.releaseDate="4/17/2017"            # release date for this version of redfishtool
+        self.version="1.0.4"                    # this redfishtool version
+        self.releaseDate="2/2/2018"             # release date for this version of redfishtool
         self.downloadFrom="https://github.com/DMTF/Redfishtool" # where to find redfishtool
         self.magic="12345"                      # used for debug to test for a known parameter in this object
         self.UNAUTHENTICATED_API=1              # unauthenticated API that doesn't send credentials in body data
@@ -103,6 +103,7 @@ class RfTransport():
         self.gotMatchOptn=False
         self.matchProp=None
         self.matchValue=None
+        self.gotEntriesOptn = False
         
         self.IdLevel2=None
         self.gotIdLevel2Optn=False
@@ -567,10 +568,17 @@ class RfTransport():
                         # this final response to a multi-response request, and it has not nextlink
                         respd["Members"]= respd["Members"] + d["Members"]
                         return(rc,r,jsonData,respd)
+                    if respd is not None and attempt + 1 >= rft.MaxNextLinks:
+                        # return what we have if we've reached MaxNextLinks
+                        return rc, r, jsonData, respd
                 elif( r.status_code!=200):
                     success=False
                     rft.printErr("Transport: processing response status codes")
                     return(5,r,False,None)
+
+        # Should not get here, but log error if we do
+        rft.printErr("Transport: Internal error; reached end of function without returning")
+        return 5, r, False, None
 
 
 
@@ -1150,9 +1158,22 @@ class RfTransport():
     
         return(namespace, version, resourceType)
 
+    def getActionInfoAllowableValues(self, rft, r, relPath, paramName):
+        allowable_values = None
+        rc, r, j, d = rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=relPath)
+        if rc == 0 and j and d is not None:
+            if "Parameters" in d and isinstance(d["Parameters"], list):
+                params = d["Parameters"]
+                for param in params:
+                    if "Name" in param and param["Name"] == paramName and "AllowableValues" in param:
+                        allowable_values = param["AllowableValues"]
+                        rft.printVerbose(2, 'getActionInfoAllowableValues: found "AllowableValues" {}'
+                                         .format(allowable_values))
+                        break
+        else:
+            rft.printErr('Error getting AllowableValues from uri {}; rc = {}, response = {}'.format(relPath, rc, r))
+        return allowable_values
 
-
-        
 '''
 TODO:
 1.
