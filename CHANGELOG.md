@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.2] - 2018-09-21
+- Fixed bug in nextLink handling
+- Synched redfishtoolTransport.py with latest version from redfishtool
+
 ## [1.0.1] - 2018-08-03
 - Fixed print statement usage for when an error is encountered while accessing $metadata
 - Reformatted code to be PEP8 conformant
