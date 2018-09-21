@@ -1,5 +1,5 @@
 # Copyright Notice:
-# Copyright 2016 Distributed Management Task Force, Inc. All rights reserved.
+# Copyright 2016 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-Mockup-Creator/blob/master/LICENSE.md
 
 # redfishMockupCreate
@@ -18,6 +18,8 @@ import datetime
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 
+tool_version = "1.0.2"
+tool_date = "9/21/2018"
 
 # rootservice navigation properties
 rootLinks = ["Systems", "Chassis", "Managers", "SessionService", "AccountService", "Registries",
@@ -167,8 +169,8 @@ def main(argv):
     # set default verbose level to 1.  so -v will cause verbose level to go to 2
     rft.verbose = 1
     rft.program = "redfishMockupCreate"
-    rft.version = "1.0.1"
-    rft.releaseDate = "08/03/2018"
+    rft.version = tool_version
+    rft.releaseDate = tool_date
     rft.secure = "Never"
     rft.waitTime = 5
     rft.timeout = 20

@@ -1,4 +1,4 @@
-Copyright 2016-2018 Distributed Management Task Force, Inc. All rights reserved.
+Copyright 2016-2018 DMTF. All rights reserved.
 
 # redfishMockupCreator
 
@@ -83,3 +83,10 @@ As a result, it is a way to take a snapshot of a system
 * Since a real redfish service can implement any URI it wants (they don't have to start with /redfish/v1), this creates a "tall mockup".  That is, it starts creating a directory structure with everything below the IP address of the remote service---it therefore includes /redfish/v1 in the directory structure.
 * Initial version: 0.9.1  provides mockup tree based on redfish 1.0 schemas.  Some new resources that were added after 1.0 are not included (eg .../Systems/<sysId>/Memory)
 * This version does not walk the SPMF schema to find navigation links, but uses a couple of simple structures at the top of the program.  We will add additional navigation properties (eg Memory, Drives,...) in next release.
+
+## Release Process
+
+1. Update `CHANGELOG.md` with the list of changes since the last release
+2. Update the `tool_version` and `tool_date` variables in `redfishMockupCreate.py` to reflect the new tool version
+3. Push changes to Github
+4. Create a new release in Github
