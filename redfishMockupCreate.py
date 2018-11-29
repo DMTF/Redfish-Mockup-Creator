@@ -60,12 +60,12 @@ def displayOptions(rft):
     print("   -H,              --Headers            -- Headers mode. An additional headers property will be added to each resource")
     print("   -T,              --Time               -- Time mode. Retrieval time of each GET will be captured")
     print("   -S,              --Secure             -- use HTTPS for all gets.   otherwise HTTP is used")
+    print("   -M,              --ScrapeMetadata    -- allow scraping of metadata")
     print("   -u <user>,       --user=<usernm>      -- username used for remote redfish authentication")
     print("   -p <passwd>,     --password=<passwd>  -- password used for remote redfish authentication")
     print("   -r <rhost>,      --rhost=<rhost>      -- remote redfish service hostname or IP:port")
     print("   -A <Auth>,       --Auth=<auth>        -- auth method ot use: None, Basic(dflt), Session ")
     print("   -D <directory>,  --Dir=<directory>    -- output mockup to directory path <directory>")
-    print("   -d <description> --description=<d>    -- text description that is put in README. ex: -d \"mockup of Contoso 1U\" ")
 
     print("")
 
@@ -463,12 +463,12 @@ def main(argv):
                             "Warning: $metadata tags are Case-Sensitive, found: {}".format(str(ref.tag)))
                     else:
                         continue
-                for tag in ['uri', 'Uri', 'URI']:
-                    if tag != 'Uri':
-                        rft.printErr(
-                            "Warning: Uri attribute is case-sensitive, found: {}".format(str(tag)))
+                for tag in ['Uri', 'uri', 'URI']:
                     uri = ref.attrib.get(tag)
                     if uri is not None:
+                        if tag != 'Uri':
+                            rft.printErr(
+                                "Warning: Uri attribute is case-sensitive, found: {}".format(str(tag)))
                         break
                 if not bool(urlparse(uri).netloc):
                     # gets if uri is local

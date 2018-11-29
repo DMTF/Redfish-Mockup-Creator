@@ -28,6 +28,7 @@ As a result, it is a way to take a snapshot of a system
    -H,          --Headers             -- Headers mode. An additional headers property will be added to each resource
    -T,          --Time                -- Time mode. Retrieval time of each GET will be captured
    -S,          --Secure              -- use HTTPS for all gets.   otherwise HTTP is used
+   -M,          --ScrapeMetadata      -- allow scraping of metadata
    -u <user>,   --user=<usernm>       -- username used for remote redfish authentication
    -p <passwd>, --password=<passwd>   -- password used for remote redfish authentication
    -r <rhost>,  --rhost=<rhost>       -- remote redfish service hostname or IP:port
