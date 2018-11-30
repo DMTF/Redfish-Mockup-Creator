@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.3] - 2018-11-30
+- Fixed checking of Uri tag in CSDL files hosted by a service
+
 ## [1.0.2] - 2018-09-21
 - Fixed bug in nextLink handling
 - Synched redfishtoolTransport.py with latest version from redfishtool
