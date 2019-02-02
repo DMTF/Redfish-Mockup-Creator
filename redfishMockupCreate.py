@@ -60,7 +60,8 @@ def displayOptions(rft):
     print("   -H,              --Headers            -- Headers mode. An additional headers property will be added to each resource")
     print("   -T,              --Time               -- Time mode. Retrieval time of each GET will be captured")
     print("   -S,              --Secure             -- use HTTPS for all gets.   otherwise HTTP is used")
-    print("   -M,              --ScrapeMetadata    -- allow scraping of metadata")
+    print("   -c,              --check              -- Check the version to be used for Redfish protocol")
+    print("   -M,              --ScrapeMetadata     -- allow scraping of metadata")
     print("   -u <user>,       --user=<usernm>      -- username used for remote redfish authentication")
     print("   -p <passwd>,     --password=<passwd>  -- password used for remote redfish authentication")
     print("   -r <rhost>,      --rhost=<rhost>      -- remote redfish service hostname or IP:port")
@@ -174,6 +175,7 @@ def main(argv):
     rft.secure = "Never"
     rft.waitTime = 5
     rft.timeout = 20
+    rft.checkproto = False
 
     # initialize properties used here in main
     absPath = None
@@ -191,8 +193,8 @@ def main(argv):
     exceptionList = ['iDRAC.Embedded.1/Logs/']
 
     try:
-        opts, args = getopt.gnu_getopt(argv[1:], "VhvqMSHTu:p:r:A:C:D:d:",
-                                       ["Version", "help", "quiet", "ScrapeMetadata", "Secure=",
+        opts, args = getopt.gnu_getopt(argv[1:], "VhvqcMSHTu:p:r:A:C:D:d:",
+                                       ["Version", "help", "quiet", "check", "ScrapeMetadata", "Secure=",
                                         "user=", "password=", "rhost=", "Auth=",
                                         "custom", "Copyright=", "Headers", "Time", "Dir=, description=]"])
     except getopt.GetoptError:
@@ -221,6 +223,8 @@ def main(argv):
             mockDirPath = arg
         elif opt in ("-d", "--description"):
             description = arg
+        elif opt in ("-c", "--check"):
+            rft.checkproto = True
         elif opt in ("-S", "--Secure"):
             rft.secure = "Always"
         elif opt in ("-q", "--quiet"):

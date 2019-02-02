@@ -175,7 +175,7 @@ class RfTransport():
             #print("else HTTP dflt")
         return(scheme)  #return ok
             
-    def getVersionsAndSetRootPath(self,rft,forceCheckProtocolVer=False):
+    def getVersionsAndSetRootPath(self,rft):
         # Read the Redfish Versions API (/redfish) to determine which protocol versions the service supports
         # The proper ServiceRoot Path returned for each protocol version eg:  { "v1": "/redfish/v1" }.
         # If self.redfishProtocolVersion="Latest" (which is the default), we will select the latest version
@@ -204,34 +204,35 @@ class RfTransport():
 
         # if the checkProtocol flag is not set true, dont query rhost for /redfish version
         # just use what was passed in with -R <redfishVersion> or the default "v1"
-        if( (rft.checkProtocolVer is False) and (forceCheckProtocolVer is not True) ):
+        if( (rft.checkProtocolVer is False) and (rft.checkproto is not True) ):
             # If here, checkProtocolVer is false.  we will generate the rootURL and hope for the best
             # This saves additional Get /redfish query that 99.9% of time is ok
-            # the Get Versions API (GET /redfish) calls the routine with forceCheckProtocolVer=True
+            # the Get Versions API (GET /redfish) calls the routine with rft.checkproto=True
             rft.rootPath=urljoin("/redfish/", (rft.protocolVer + "/") )
             #id of protocolVersion is v1, rft.rootPath="/redfish/v1/"
 
             # calculate the rootUri including scheme,rhost,rootPath properly
             scheme=rft.getApiScheme(rft.UNAUTHENTICATED_API)
             scheme_tuple=[scheme,rft.rhost, rft.rootPath, "","",""]
-            rootUrl=urlunparse(scheme_tuple)
-            rft.rootUri=rootUrl
+            url=urlunparse(scheme_tuple)
+            rft.rootUri=url
             # save parameters
             rft.rhostSupportedVersions=None
             rft.versionToUse=rft.protocolVer
             rft.printVerbose(5,"Transport.getRootPath: protocolVer to use={},  rootPath={}".format(rft.versionToUse, rft.rootPath))
-            return(0,None,False,None) # return ok
+            #return(0,None,False,None) # return ok
 
-        # create scheme based on input parameters and apiType(set here) using setApiScheme() function above.
-        scheme=rft.getApiScheme(rft.UNAUTHENTICATED_API)
+        else:
+            # create scheme based on input parameters and apiType(set here) using setApiScheme() function above.
+            scheme=rft.getApiScheme(rft.UNAUTHENTICATED_API)
+
+            scheme_tuple=[scheme, rft.rhost, "/redfish", "","",""]
+            url=urlunparse(scheme_tuple)                # url= "http[s]://<rhost>[:<port>]/redfish"
+
+            rft.printVerbose(5,"Transport.getRootPath: url={}".format(url))
 
         #define header and put the full URL together
         hdrs = dict(rft.dfltGetDeleteHeadHdrs)
-
-        scheme_tuple=[scheme, rft.rhost, "/redfish", "","",""]
-        url=urlunparse(scheme_tuple)                # url= "http[s]://<rhost>[:<port>]/redfish"
-        
-        rft.printVerbose(5,"Transport.getRootPath: url={}".format(url))
 
         # now send request to rhost, with retries based on -W <waitNum>:<waitTime> option.
         # handle exceptions including timeouts.
@@ -293,14 +294,18 @@ class RfTransport():
         rft.printStatus(4,r=r)
         
         # if here, r is the response to the GET /redfish  request
-        rft.printVerbose(5,"Transport: getVersionsAndRootPath: Get /redfish: statusCode: {}".format(r.status_code))
+        rft.printVerbose(5,"Transport: getVersionsAndRootPath: Get {}: statusCode: {}".format(rft.rootPath,r.status_code))
             
         # load it into a python dictionary
-        try:
-            rft.rhostVersions=json.loads(r.text)
-        except ValueError:
-            rft.printErr("Transport: Error reading Versions from /redfish: Bad Json:{}".format(r.text))
-            return(5,None,False,None)
+        if( (rft.checkProtocolVer is False) and (rft.checkproto is not True) ):
+            tmpjson = '{"'+rft.protocolVer+'": "'+rft.protocolVer+'"}'
+            rft.rhostVersions=json.loads(tmpjson)
+        else:
+            try:
+                rft.rhostVersions=json.loads(r.text)
+            except ValueError:
+                rft.printErr("Transport: Error reading Versions from /redfish: Bad Json:{}".format(r.text))
+                return(5,None,False,None)
 
         #create a list of version numbers that the service supports from the response dict.
         # this will look something like ["v1", "v2"...]
@@ -330,16 +335,19 @@ class RfTransport():
 
         # second, calculate the version to use if the user specifies a specific version number eg -P v2
         else:  # user explicitely specified a version to use.  Check if service supports it
-            if rft.protocolVer in rft.supportedVersions:
-                if rft.protocolVer in serviceSupportedVersions:
-                    rfVer=rft.protocolVer
-                else:
-                    rft.printErr("Error: protocol version {} is not supported by remote redfish service".format(rft.protocolVer))
-                    rft.printErr("  Versions supported by remote service: {}".format(serviceSupportedVersions),noprog=True)
-
+            if( (rft.checkProtocolVer is False) and (rft.checkproto is not True) ):
+                rfVer=rft.protocolVer
             else:
-                rft.printErr("Error: protocol version {} is not supported by {}".format( rft.protocolVer,rft.program))
-                rft.printErr("  Versions supported by {}: {}".format(rft.program,rft.supportedVersions),noprog=True)
+                if rft.protocolVer in rft.supportedVersions:
+                    if rft.protocolVer in serviceSupportedVersions:
+                        rfVer=rft.protocolVer
+                    else:
+                        rft.printErr("Error: protocol version {} is not supported by remote redfish service".format(rft.protocolVer))
+                        rft.printErr("  Versions supported by remote service: {}".format(serviceSupportedVersions),noprog=True)
+
+                else:
+                    rft.printErr("Error: protocol version {} is not supported by {}".format( rft.protocolVer,rft.program))
+                    rft.printErr("  Versions supported by {}: {}".format(rft.program,rft.supportedVersions),noprog=True)
 
         if( not rfVer):  # more error messages if error
             return(4,None,False,None)
@@ -347,7 +355,10 @@ class RfTransport():
         # If here, we have a valid protocol version
         # get the service root path for that version from the Versions response
         # save the service root path in transport object
-        rft.rootPath=self.rhostVersions[rfVer]
+        if( (rft.checkProtocolVer is False) and (rft.checkproto is not True) ):
+            rft.rootPath=""
+        else:
+            rft.rootPath=self.rhostVersions[rfVer]
         rft.rootUri=r.url
         #rft.rootUri=self.scheme+self.rhost+self.rootPath
         rft.rhostSupportedVersions=list(serviceSupportedVersions)
@@ -600,7 +611,7 @@ class RfTransport():
         if(rft.help):
             print(" {} versions | redfish [-vh]   -- get redfishProtocol versions supported by rhost".format(rft.program))
             return(0,None,False,None)
-        rc,r,j,d=rft.getVersionsAndSetRootPath(rft, forceCheckProtocolVer=True)
+        rc,r,j,d=rft.getVersionsAndSetRootPath(rft)
         if(rc != 0):
             return(rc,r,False,None)
 

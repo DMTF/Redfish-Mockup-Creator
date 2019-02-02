@@ -1,0 +1,15 @@
+version: "3.2"
+services:
+
+  redfish-mockup-builder:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: redfish-mockup-builder:latest
+    ports:
+      - "8000:80"
+    container_name: redfish-mockup-builder
+    environment:
+      - MODELIP=ilorestfulapiexplorer.ext.hpe.com
+    volumes:
+      - /tmp/mockup/model:/mockup/model
