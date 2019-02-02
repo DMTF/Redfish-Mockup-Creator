@@ -15,4 +15,5 @@ COPY redfishtoollib/__init__.py /mockup/redfishtoollib
 COPY redfishtoollib/redfishtoolTransport.py /mockup/redfishtoollib
 COPY redfishtoollib/ServiceRoot.py /mockup/redfishtoollib
 COPY run-mockup.sh /mockup
+#ENV MODELIP=$MODELIP
 CMD /mockup/run-mockup.sh
