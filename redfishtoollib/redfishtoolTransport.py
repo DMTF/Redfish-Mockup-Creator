@@ -287,7 +287,7 @@ class RfTransport():
                 rft.printStatusErr4xx(r.status_code)
             else:
                 rft.printErr("Transport Error. No response")
-            return(5,None,False,None)
+            return(5,r,False,None)
         
         #print the response status (-ssss)
         rft.printStatus(4,r=r)
@@ -602,7 +602,7 @@ class RfTransport():
             return(0,None,False,None)
         rc,r,j,d=rft.getVersionsAndSetRootPath(rft, forceCheckProtocolVer=True)
         if(rc != 0):
-            return(rc,None,False,None)
+            return(rc,r,False,None)
 
         # note that getVersionAndSetRootPath() returns the versions data as d,
         #  so there is no need to call GET /redfish again.  we have it at rft.versionsDict

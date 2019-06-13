@@ -15,7 +15,7 @@ from redfishtoollib import RfTransport
 # only the program name, date, and version is changed
 import errno
 import datetime
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 import xml.etree.ElementTree as ET
 
 tool_version = "1.0.3"
@@ -278,8 +278,13 @@ def main(argv):
     rc, r, j, d = rft.getVersions(rft, cmdTop=True)
     if(rc != 0):
         rft.printErr(
-            "ERROR: Cant find Redfish Service at rhost sending GET /redfish  request. aborting")
-        sys.exit(1)
+            "ERROR: Cannot get Redfish service version from URI /redfish (status {}). Assuming default version."
+            .format(r.status_code))
+        rft.rootPath = urljoin("/redfish/", (rft.protocolVer + "/"))
+        d = {"v1": "/redfish/v1/"}
+        rf_version = json.dumps(d)
+    else:
+        rf_version = r.text
 
     # If directory was specified, check and create; Otherwise do the same the default directory
     if mockDirPath is not None:
@@ -336,7 +341,7 @@ def main(argv):
     # copy the versions output to ^/redfish/index.json
     filePath = os.path.join(dirPath, rfFile)
     with open(filePath, 'w', encoding='utf-8') as f:
-        f.write(r.text)
+        f.write(rf_version)
     # Add copyright key/value pair into index.json
     if (addCopyright is not None):
         if(type(d) is dict):
