@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.4] - 2019-06-21
+- Made change to allow for `/redfish` to not be present on the service, but report an error if not found
+
 ## [1.0.3] - 2018-11-30
 - Fixed checking of Uri tag in CSDL files hosted by a service
 
