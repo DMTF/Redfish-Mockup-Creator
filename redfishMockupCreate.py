@@ -575,6 +575,7 @@ def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeader
     d = get_nav_and_collection_properties(rft, rs, exceptionList)
     if d is not None:
         for x in d:
+            location_ref = True if '_location_ref' in x else False
             if '@odata.id' in x:
                 link = x.get('@odata.id')
                 if link in processed:
@@ -591,9 +592,12 @@ def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeader
             if(rc != 0):
                 rft.printErr(
                     "ERROR: got error reading resource --continuing. link: {}".format(x))
-            # Recursively calling further tree nodes which will fetch data.
-            recursive_call(rft, d, rootUrl, mockDir, processed,
-                           addCopyright, addHeaders, addTime, exceptionList)
+            if not location_ref:
+                # Recursively calling further tree nodes which will fetch data.
+                recursive_call(rft, d, rootUrl, mockDir, processed,
+                               addCopyright, addHeaders, addTime, exceptionList)
+            else:
+                rft.printVerbose(1, "   Skip parsing of Location payload: {}".format(link))
     else:
         return (None)
 
@@ -606,7 +610,7 @@ def get_location_uri_as_odata_id(rft, location):
         if isinstance(uri, str):
             rft.printVerbose(
                 2, '   Found Location Uri {} in resource'.format(uri))
-            odata_id = {'@odata.id': uri}
+            odata_id = {'@odata.id': uri, '_location_ref': True}
     return odata_id
 
 
