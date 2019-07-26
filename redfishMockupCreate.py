@@ -597,7 +597,7 @@ def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeader
                 recursive_call(rft, d, rootUrl, mockDir, processed,
                                addCopyright, addHeaders, addTime, exceptionList)
             else:
-                rft.printVerbose(1, "   Skip parsing of Location payload: {}".format(link))
+                rft.printVerbose(1, "   Skip parsing of Location reference: {}".format(link))
     else:
         return (None)
 
