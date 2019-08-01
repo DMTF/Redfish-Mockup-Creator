@@ -1136,6 +1136,10 @@ class RfTransport():
             return(None,None,None)
 
         resourceOdataType=resource["@odata.type"]
+        if not isinstance(resourceOdataType, str):
+            rft.printErr(
+                "Transport:parseOdataType: Error: @odata.type property not a string")
+            return (None, None, None)
     
         #the odataType format is:  <namespace>.<version>.<type>   where version may have periods in it 
         odataTypeMatch = re.compile('^#([a-zA-Z0-9]*)\.([a-zA-Z0-9\._]*)\.([a-zA-Z0-9]*)$')  
