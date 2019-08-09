@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.5] - 2019-08-09
+- Added check to avoid parsing the resources that are referenced by Location properties
+
 ## [1.0.4] - 2019-06-21
 - Made change to allow for `/redfish` to not be present on the service, but report an error if not found
 
