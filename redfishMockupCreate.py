@@ -18,8 +18,8 @@ import datetime
 from urllib.parse import urljoin, urlparse
 import xml.etree.ElementTree as ET
 
-tool_version = "1.0.4"
-tool_date = "06/21/2019"
+tool_version = "1.0.5"
+tool_date = "08/08/2019"
 
 # rootservice navigation properties
 rootLinks = ["Systems", "Chassis", "Managers", "SessionService", "AccountService", "Registries",
