@@ -277,9 +277,14 @@ def main(argv):
     # verify we can talk to the rhost
     rc, r, j, d = rft.getVersions(rft, cmdTop=True)
     if(rc != 0):
+        if r:
+            status_code = r.status_code
+        else:
+            status_code = "unknown"
+
         rft.printErr(
             "ERROR: Cannot get Redfish service version from URI /redfish (status {}). Assuming default version."
-            .format(r.status_code))
+            .format(status_code))
         rft.rootPath = urljoin("/redfish/", (rft.protocolVer + "/"))
         d = {"v1": "/redfish/v1/"}
         rf_version = json.dumps(d)
