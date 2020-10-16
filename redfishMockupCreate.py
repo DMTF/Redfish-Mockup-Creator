@@ -15,7 +15,7 @@ from redfishtoollib import RfTransport
 # only the program name, date, and version is changed
 import errno
 import datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlunparse
 import xml.etree.ElementTree as ET
 
 tool_version = "1.0.5"
@@ -286,10 +286,11 @@ def main(argv):
             "ERROR: Cannot get Redfish service version from URI /redfish (status {}). Assuming default version."
             .format(status_code))
         rft.rootPath = urljoin("/redfish/", (rft.protocolVer + "/"))
+        scheme_tuple = [rft.getApiScheme(rft.UNAUTHENTICATED_API), rft.rhost, rft.rootPath, "", "", ""]
+        rft.rootUri = urlunparse(scheme_tuple)
         d = {"v1": "/redfish/v1/"}
-        rf_version = json.dumps(d)
-    else:
-        rf_version = r.text
+
+    rf_version = json.dumps(d)
 
     # If directory was specified, check and create; Otherwise do the same the default directory
     if mockDirPath is not None:
@@ -367,7 +368,7 @@ def main(argv):
     # create the /redfish/v1 root dir and copy output of Get ^/redfish/v1 to index.json file
     rft.printVerbose(1, "Creating /redfish/v1 resource")
     rc, r, j, d = rft.rftSendRecvRequest(
-        rft.UNAUTHENTICATED_API, 'GET', r.url, relPath=rft.rootPath)
+        rft.UNAUTHENTICATED_API, 'GET', rft.rootUri, relPath=rft.rootPath)
     rootv1data = d
     if(rc != 0):
         rft.printErr(
