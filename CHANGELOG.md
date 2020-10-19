@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.6] - 2020-10-19
+- Made enhancements to be able to create a mockup of a server with a malformed `/redfish` resource
+
 ## [1.0.5] - 2019-08-09
 - Added check to avoid parsing the resources that are referenced by Location properties
 
