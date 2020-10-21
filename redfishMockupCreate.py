@@ -672,7 +672,7 @@ def get_nav_and_collection_properties(rft, rs, exceptionList):
                                     nav_list.append(x)
                                 else:
                                     rft.printErr('ERROR: LogEntry %s from %s is missing the @odata.id property; skipping'
-                                                 % (x.get('Id'), rs.get('@odata.id')))
+                                                 % (x.get('Id', ''), rs.get('@odata.id')))
                         # handle case of location uri references to JSON schemas and messages registries
                         elif k == 'Location' and rs_type in location_uri_type_list:
                             odata_id = get_location_uri_as_odata_id(rft, x)
@@ -692,7 +692,7 @@ def get_nav_and_collection_properties(rft, rs, exceptionList):
                             nav_list.append(v)
                         else:
                             rft.printErr('ERROR: LogEntry %s from %s is missing the @odata.id property; skipping'
-                                         % (v.get('Id'), rs.get('@odata.id')))
+                                         % (v.get('Id', ''), rs.get('@odata.id')))
 
     if not nav_list:
         # If the list is empty, it means there are no navigation properties.
