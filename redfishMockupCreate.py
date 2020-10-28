@@ -316,6 +316,17 @@ def main(argv):
             rft.printErr("ERROR: cant create /redfish directory. aborting")
             sys.exit(1)
 
+    # create copy of argv with password masked
+    mask_argv = list(argv)
+    if rft.password:
+        for i, arg in enumerate(mask_argv):
+            if i > 0:
+                if ((arg.startswith('-p') or arg.startswith('--p') or
+                     mask_argv[i - 1].startswith('-p') or
+                     mask_argv[i - 1].startswith('--p')) and
+                        rft.password in arg):
+                    mask_argv[i] = arg.replace(rft.password, '********')
+
     # print out rhost and directory path
     rft.printVerbose(1, "rhost: {}".format(rft.rhost))
     rft.printVerbose(1, "full directory path: {}".format(mockDir))
@@ -332,7 +343,7 @@ def main(argv):
         readf.write("Created: {}\n".format(rfdatetime))
         readf.write("rhost:  {}\n".format(rft.rhost))
         readf.write("Description: {}\n".format(description))
-        readf.write("Commandline: {} {}\n".format('python3.4', ' '.join(argv)))
+        readf.write("Commandline: {} {}\n".format('python3.4', ' '.join(mask_argv)))
     if os.path.isfile(readmeFile) is False:
         rft.printErr("ERROR: cant create README file in directory. aborting")
         sys.exit(1)
