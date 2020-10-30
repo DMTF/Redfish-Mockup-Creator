@@ -591,7 +591,7 @@ def recursive_call(rft, rs, rootUrl, mockDir, processed, addCopyright, addHeader
                 else:
                     processed.add(link)
             rft.printVerbose(
-                1, "   Creating resource at: {}".format(x["@odata.id"]))
+                1, "   Creating resource at: {}".format(x.get("@odata.id")))
             # readResourceMkdirCreateIndxFile(addCopyright, addHeaders, addTime, ) method will create a directory and index.json file for the resource link
             rc, r, j, d = readResourceMkdirCreateIndxFile(
                 rft, rootUrl, mockDir, x, addCopyright, addHeaders, addTime)
@@ -668,7 +668,11 @@ def get_nav_and_collection_properties(rft, rs, exceptionList):
                         elif len(x) > 1 and '@odata.type' in x:
                             ns, ver, resType = rft.parseOdataType(rft, x)
                             if resType == 'LogEntry':
-                                nav_list.append(x)
+                                if '@odata.id' in x:
+                                    nav_list.append(x)
+                                else:
+                                    rft.printErr('ERROR: LogEntry %s from %s is missing the @odata.id property; skipping'
+                                                 % (x.get('Id', ''), rs.get('@odata.id')))
                         # handle case of location uri references to JSON schemas and messages registries
                         elif k == 'Location' and rs_type in location_uri_type_list:
                             odata_id = get_location_uri_as_odata_id(rft, x)
@@ -684,7 +688,11 @@ def get_nav_and_collection_properties(rft, rs, exceptionList):
                 elif len(v) > 1 and '@odata.type' in v:
                     ns, ver, resType = rft.parseOdataType(rft, v)
                     if resType == 'LogEntry':
-                        nav_list.append(v)
+                        if '@odata.id' in v:
+                            nav_list.append(v)
+                        else:
+                            rft.printErr('ERROR: LogEntry %s from %s is missing the @odata.id property; skipping'
+                                         % (v.get('Id', ''), rs.get('@odata.id')))
 
     if not nav_list:
         # If the list is empty, it means there are no navigation properties.
