@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.7] - 2020-10-30
+- Made enhancement to skip resources not containing `@odata.id` instead of crashing
+- Removed password from readme file generation
+
 ## [1.0.6] - 2020-10-19
 - Made enhancements to be able to create a mockup of a server with a malformed `/redfish` resource
 
