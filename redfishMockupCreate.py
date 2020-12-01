@@ -29,15 +29,17 @@ def main():
 
     # Get the input arguments
     argget = argparse.ArgumentParser( description = "A tool to walk a Redfish a service and create a mockup from all resources" )
-    argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
-    argget.add_argument( "--Secure", "-S", action = "store_true", help = "Use HTTPS for all operations" )
     argget.add_argument( "--user", "-u", type = str, required = True, help = "The user name for authentication" )
     argget.add_argument( "--password", "-p",  type = str, required = True, help = "The password for authentication" )
     argget.add_argument( "--rhost", "-r", type = str, required = True, help = "The IP address (and port) of the Redfish service" )
+    argget.add_argument( "--Secure", "-S", action = "store_true", help = "Use HTTPS for all operations" )
     argget.add_argument( "--Auth", "-A", type = str, help = "Authentication mode", choices = [ "None", "Basic", "Session" ], default = "Session" )
+    argget.add_argument( "--Headers", "-H", action = "store_true", help = "Captures the response headers in the mockup" )
+    argget.add_argument( "--Time", "-T", action = "store_true", help = "Capture the time of each GET in the mockup" )
     argget.add_argument( "--Dir", "-D", type = str, help = "Output directory for the mockup", default = "rfMockUpDfltDir" )
     argget.add_argument( "--Copyright", "-C", type = str, help = "Copyright string to add to each resource", default = None )
     argget.add_argument( "--description", "-d", type = str, help = "Mockup description to add to the output readme file", default = "" )
+    argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
     args, unknown = argget.parse_known_args()
 
     # Convert the authentication method to something usable with the Redfish library
@@ -176,16 +178,18 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
                 json.dump( save_dict, file, indent = 4, separators = ( ",", ": " ) )
 
         # Save headers
-        with open( os.path.join( path, "headers.json" ), "w", encoding = "utf-8" ) as file:
-            headers_dict = {}
-            for header in resource.getheaders():
-                headers_dict[header[0]] = header[1]
-            json.dump( { "GET": headers_dict }, file, indent = 4, separators = ( ",", ": " ) )
+        if args.Headers:
+            with open( os.path.join( path, "headers.json" ), "w", encoding = "utf-8" ) as file:
+                headers_dict = {}
+                for header in resource.getheaders():
+                    headers_dict[header[0]] = header[1]
+                json.dump( { "GET": headers_dict }, file, indent = 4, separators = ( ",", ": " ) )
 
         # Save timing info
         response_times[uri] = end_time - start_time
-        with open( os.path.join( path, "time.json" ), "w", encoding = "utf-8" ) as file:
-            json.dump( { "GET_Time": "{0:.2f}".format( end_time - start_time ) }, file, indent = 4, separators = ( ",", ": " ) )
+        if args.Time:
+            with open( os.path.join( path, "time.json" ), "w", encoding = "utf-8" ) as file:
+                json.dump( { "GET_Time": "{0:.2f}".format( response_times[uri] ) }, file, indent = 4, separators = ( ",", ": " ) )
     except Exception as err:
         print( "ERROR: Could not save '{}': {}".format( uri, err ) )
         return
