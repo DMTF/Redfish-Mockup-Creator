@@ -18,7 +18,6 @@ git fetch && git rebase origin
 
 # Update the version number in redfishMockupCreate.py
 sed -i -E 's/tool_version = .+/tool_version = "'$1'"/' redfishMockupCreate.py
-sed -i -E 's|tool_date = .+|tool_date = "'$(date +'%m/%d/%Y')'"|' redfishMockupCreate.py
 
 # Update the change log file
 ex CHANGELOG.md <<eof

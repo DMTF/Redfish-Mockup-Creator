@@ -21,7 +21,6 @@ import xml.etree.ElementTree as ET
 
 # Version info
 tool_version = "1.0.7"
-tool_date = "10/30/2020"
 
 def main():
     """
