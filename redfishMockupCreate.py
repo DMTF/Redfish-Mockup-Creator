@@ -30,9 +30,8 @@ def main():
 
     # Get the input arguments
     argget = argparse.ArgumentParser( description = "A tool to walk a Redfish a service and create a mockup from all resources" )
-    argget.add_argument( "--version", "-V", action = "store_true", help = "Shows the version and exits" )
     argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
-    argget.add_argument( "--secure", "-S", action = "store_true", help = "Use HTTPS for all operations" )
+    argget.add_argument( "--Secure", "-S", action = "store_true", help = "Use HTTPS for all operations" )
     argget.add_argument( "--user", "-u", type = str, required = True, help = "The user name for authentication" )
     argget.add_argument( "--password", "-p",  type = str, required = True, help = "The password for authentication" )
     argget.add_argument( "--rhost", "-r", type = str, required = True, help = "The IP address (and port) of the Redfish service" )
@@ -40,14 +39,9 @@ def main():
     argget.add_argument( "--Dir", "-D", type = str, help = "Output directory for the mockup", default = "rfMockUpDfltDir" )
     argget.add_argument( "--Copyright", "-C", type = str, help = "Copyright string to add to each resource", default = None )
     argget.add_argument( "--description", "-d", type = str, help = "Mockup description to add to the output readme file", default = "" )
-    args = argget.parse_args()
+    args, unknown = argget.parse_known_args()
 
-    # Display the version
-    if args.version:
-        print( "Redfish Mockup Creator, Version {}".format( tool_version ) )
-        sys.exit( 0 )
-
-    # Convert the authentication method to something useable with the Redfish library
+    # Convert the authentication method to something usable with the Redfish library
     # This is needed for backwards compatibility with older versions of the tool
     if args.Auth == "Session":
         args.Auth = "session"
@@ -56,7 +50,7 @@ def main():
 
     # Build the base URL for the service
     # More backwards compatibility
-    if args.secure:
+    if args.Secure:
         args.rhost = "https://{}".format( args.rhost )
     else:
         args.rhost = "http://{}".format( args.rhost )
@@ -67,15 +61,14 @@ def main():
         try:
             os.makedirs( args.Dir )
         except Exception as err:
-            print( "ERROR: Could not create output directory '{}': {}".format( args.Dir, err ) )
-            print( "Aborting" )
+            print( "ERROR: Aborting; xould not create output directory '{}': {}".format( args.Dir, err ) )
             sys.exit( 1 )
     else:
         if len( os.listdir( args.Dir ) ) != 0:
-            print( "ERROR: Output directory not empty..." )
-            print( "Aborting" )
+            print( "ERROR: Aborting; output directory not empty..." )
             sys.exit( 1 )
 
+    print( "Redfish Mockup Creator, Version {}".format( tool_version ) )
     print( "Address: {}".format( args.rhost ) )
     print( "Full Output Path: {}".format( os.path.abspath( args.Dir ) ) )
     print( "Description: {}".format( args.description ) )
@@ -92,8 +85,7 @@ def main():
             readf.write( "User: {}\n".format( args.user ) )
             readf.write( "Description: {}\n".format( args.description ) )
     except Exception as err:
-        print( "ERROR: Could not create README file in output directory: {}".format( err ) )
-        print( "Aborting" )
+        print( "ERROR: Aborting; could not create README file in output directory: {}".format( err ) )
         sys.exit( 1 )
 
     # Set up the Redfish object
@@ -101,10 +93,10 @@ def main():
         redfish_obj = redfish.redfish_client( base_url = args.rhost, username = args.user, password = args.password )
         redfish_obj.login( auth = args.Auth )
     except Exception as err:
-        print( "ERROR: Could not authenticate with the Redfish service: {}".format( err ) )
-        print( "Aborting" )
+        print( "ERROR: Aborting; could not authenticate with the Redfish service: {}".format( err ) )
         sys.exit( 1 )
 
+    # Scan the service
     response_times = {}
     scan_resource( redfish_obj, args, response_times, "/redfish" )
     scan_resource( redfish_obj, args, response_times, "/redfish/v1/odata" )
@@ -149,6 +141,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
             os.makedirs( path )
     except Exception as err:
         print( "ERROR: Could not create directory for '{}': {}".format( uri, err ) )
+        return
 
     # Check if the index file already exists
     index_name = "index.json"
