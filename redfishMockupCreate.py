@@ -223,19 +223,16 @@ def scan_object( redfish_obj, args, response_times, object ):
         # If the object is a dictionary, inspect the properties found
         if isinstance( object, dict ):
             # If the item is a reference, go to the resource
-            if item == "@odata.id":
-                if "#" not in object[item]:
-                    scan_resource( redfish_obj, args, response_times, object[item] )
-            # If the item is a local reference to a registry file, go to the file
-            elif item == "Location":
-                if isinstance( object, str ):
-                    if object[item].startswith( "/" ):
+            if item == "@odata.id" or item == "Uri" or item == "Members@odata.nextLink":
+                if isinstance( object[item], str ):
+                    if object[item].startswith( "/" ) and "#" not in object[item]:
                         scan_resource( redfish_obj, args, response_times, object[item] )
-            # If the item is an object, scan one level deeper
+
+            # If the item is an object or array, scan one level deeper
             elif isinstance( object[item], dict ) or isinstance( object[item], list ):
                 scan_object( redfish_obj, args, response_times, object[item] )
 
-        # If the object is a list, see if the member needs to be scanned deeper
+        # If the object is a list, see if the member needs to be scanned
         elif isinstance( object, list ):
             if isinstance( item, dict ) or isinstance( item, list ):
                 scan_object( redfish_obj, args, response_times, item )
