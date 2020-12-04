@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.8] - 2020-12-04
+- Replaced internal copy of redfishtoollib to leverage the python-redfish-library
+
 ## [1.0.7] - 2020-10-30
 - Made enhancement to skip resources not containing `@odata.id` instead of crashing
 - Removed password from readme file generation

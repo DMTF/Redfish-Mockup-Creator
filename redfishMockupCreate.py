@@ -20,7 +20,7 @@ import time
 import xml.etree.ElementTree as ET
 
 # Version info
-tool_version = "1.0.7"
+tool_version = "1.0.8"
 
 def main():
     """
