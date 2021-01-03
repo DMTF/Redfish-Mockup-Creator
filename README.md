@@ -1,4 +1,4 @@
-# Redfish Mockup Server
+# Redfish Mockup Creator
 
 Copyright 2016-2020 DMTF. All rights reserved.
 
@@ -9,9 +9,14 @@ The mockup created can be used with the [Redfish Mockup Server](https://github.c
 
 ## Requirements
 
-If running the mockup server natively on your system:
-* Install [Python 3](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installing/)
+To run the mockup creator natively on your system:
+
+* Install [Python 3](https://www.python.org/downloads/ "https://www.python.org/downloads/") and [pip](https://pip.pypa.io/en/stable/installing/ "https://pip.pypa.io/en/stable/installing").
 * Install required Python packages: `pip install -r requirements.txt`
+
+To run the mockup server as a Docker container:
+
+* Install [Docker](https://www.docker.com/get-started "https://www.docker.com/get-started").
 
 ## Usage
 
@@ -47,7 +52,7 @@ optional arguments:
 
 ```
 
-Example: `python redfishMockupCreate.py -u root -p root -r 192.168.1.100 -S -D my-mockup`
+### Description
 
 The tool will log into the service specified by the *rhost* argument using the credentials provided by the *user* and *password* arguments.
 It will then walk the service to find all resources and place each resource in directory specified by the *Dir* argument.
@@ -55,6 +60,38 @@ If *Dir* is not specified, the output will be "rfMockUpDfltDir".
 For every resource found, it will create an "index.json" file in the output directory.
 If the *Headers* argument is specified, it will save the response headers for each resource in a "headers.json" file.
 If the *Time* argument is specified, it will save the time elapsed for each resource in a "time.json" file. 
+
+### Native system example
+
+```bash
+python redfishMockupCreate.py -u root -p root -r 192.168.1.100 -S -D /home/user/redfish-mockup
+```
+
+### Docker container example
+
+To run as a Docker container, use one of these actions to pull or build the container:
+
+* Pull the container from Docker Hub:
+
+    ```bash
+    docker pull dmtf/redfish-mockup-creator:latest
+    ```
+* Build a container from local source:
+
+    ```bash
+    docker build -t dmtf/redfish-mockup-creator:latest .
+    ```
+* Build a container from GitHub:
+
+    ```bash
+    docker build -t dmtf/redfish-mockup-creator:latest https://github.com/DMTF/Redfish-Mockup-Creator.git
+    ```
+
+This command runs the container with a specified mockup, where `<path-to-mockup>` is the path to the mockup directory:
+
+```bash
+docker run --rm --user="$(id -u):$(id -g)" -v <path-to-mockup>:/mockup dmtf/redfish-mockup-creator:latest -u root -p root -r 192.168.1.100 -S
+```
 
 ## Release Process
 
