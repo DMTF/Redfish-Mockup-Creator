@@ -1,4 +1,4 @@
-# Redfish Mockup Server
+# Redfish Mockup Creator
 
 Copyright 2016-2020 DMTF. All rights reserved.
 
