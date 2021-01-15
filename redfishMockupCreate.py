@@ -158,7 +158,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
         print( "Getting {}...".format( uri ) )
     try:
         start_time = time.time()
-        resource = redfish_obj.get( uri )
+        resource = redfish_obj.get( uri, headers = { "Accept-Encoding": "*" } )
         end_time = time.time()
     except Exception as err:
         print( "ERROR: Could not get '{}': {}".format( uri, err ) )
