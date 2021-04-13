@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.0] - 2021-04-13
+- Allow for any encoding type
+
 ## [1.0.9] - 2021-01-11
 - Added Dockerfile
 
