@@ -176,7 +176,22 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
                 save_dict["@Redfish.Copyright"] = args.Copyright
             with open( index_path, "w", encoding = "utf-8") as file:
                 json.dump( save_dict, file, indent = 4, separators = ( ",", ": " ) )
+    except Exception as err:
+        print( "ERROR: Could not save '{}': {}".format( uri, err ) )
+        print( "Attempting to save response data in error.txt..." )
+        try:
+            with open( os.path.join( path, "error.txt" ), "w", encoding = "utf-8" ) as file:
+                file.write( "HTTP {}\n".format( resource.status ) )
+                for header in resource.getheaders():
+                    file.write( "{}: {}\n".format( header[0], header[1] ) )
+                file.write( "\n" )
+                file.write( resource.text )
+        except:
+            print( "Could not save response data; moving on... " )
+        return
 
+    # Save additional info
+    try:
         # Save headers
         if args.Headers:
             with open( os.path.join( path, "headers.json" ), "w", encoding = "utf-8" ) as file:
@@ -191,7 +206,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
             with open( os.path.join( path, "time.json" ), "w", encoding = "utf-8" ) as file:
                 json.dump( { "GET_Time": "{0:.2f}".format( response_times[uri] ) }, file, indent = 4, separators = ( ",", ": " ) )
     except Exception as err:
-        print( "ERROR: Could not save '{}': {}".format( uri, err ) )
+        print( "ERROR: Could not save header or timing data for '{}': {}".format( uri, err ) )
         return
 
     # Scan the response to see where to go next
