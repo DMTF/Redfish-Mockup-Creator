@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.1] - 2021-04-23
+- Added capturing of response information when a resource cannot be parsed
+
 ## [1.1.0] - 2021-04-13
 - Allow for any encoding type
 
