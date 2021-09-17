@@ -49,7 +49,8 @@ optional arguments:
   --description DESCRIPTION, -d DESCRIPTION
                         Mockup description to add to the output readme file
   --quiet, -q           Quiet mode; progress messages suppressed
-
+  --trace, -trace       Enable tracing; creates the file rf-mockup-create.log
+                        to capture Redfish traces with the service
 ```
 
 ### Description

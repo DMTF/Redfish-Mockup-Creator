@@ -18,6 +18,8 @@ import redfish
 import sys
 import time
 import xml.etree.ElementTree as ET
+import logging
+from redfish import redfish_logger
 
 # Version info
 tool_version = "1.1.1"
@@ -40,6 +42,7 @@ def main():
     argget.add_argument( "--Copyright", "-C", type = str, help = "Copyright string to add to each resource", default = None )
     argget.add_argument( "--description", "-d", type = str, help = "Mockup description to add to the output readme file", default = "" )
     argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
+    argget.add_argument( "--trace", "-trace", action = "store_true", help = "Enable tracing; creates the file rf-mockup-create.log in the output directory to capture Redfish traces with the service" )
     args, unknown = argget.parse_known_args()
 
     # Convert the authentication method to something usable with the Redfish library
@@ -62,7 +65,7 @@ def main():
         try:
             os.makedirs( args.Dir )
         except Exception as err:
-            print( "ERROR: Aborting; xould not create output directory '{}': {}".format( args.Dir, err ) )
+            print( "ERROR: Aborting; could not create output directory '{}': {}".format( args.Dir, err ) )
             sys.exit( 1 )
     else:
         if len( os.listdir( args.Dir ) ) != 0:
@@ -88,6 +91,10 @@ def main():
     except Exception as err:
         print( "ERROR: Aborting; could not create README file in output directory: {}".format( err ) )
         sys.exit( 1 )
+
+    # Set up the trace file if requested
+    if args.trace:
+        redfish_logger( os.path.join( args.Dir, "rf-mockup-create.log" ), "%(asctime)s - %(name)s - %(levelname)s - %(message)s", logging.DEBUG )
 
     # Set up the Redfish object
     try:
