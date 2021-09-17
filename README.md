@@ -49,7 +49,9 @@ optional arguments:
   --description DESCRIPTION, -d DESCRIPTION
                         Mockup description to add to the output readme file
   --quiet, -q           Quiet mode; progress messages suppressed
-
+  --maxlogentries MAXLOGENTRIES, -maxlogentries MAXLOGENTRIES
+                        The maximum number of log entries to collect in each
+                        log service
 ```
 
 ### Description

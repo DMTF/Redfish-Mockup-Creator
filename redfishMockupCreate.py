@@ -40,6 +40,7 @@ def main():
     argget.add_argument( "--Copyright", "-C", type = str, help = "Copyright string to add to each resource", default = None )
     argget.add_argument( "--description", "-d", type = str, help = "Mockup description to add to the output readme file", default = "" )
     argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
+    argget.add_argument( "--maxlogentries", "-maxlogentries", type = int, help = "The maximum number of log entries to collect in each log service" )
     args, unknown = argget.parse_known_args()
 
     # Convert the authentication method to something usable with the Redfish library
@@ -172,9 +173,24 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
                 file.write( resource.text )
         else:
             save_dict = resource.dict
+
+            # Prune the log entry collection if needed
+            if save_dict.get( "@odata.type", None ) == "#LogEntryCollection.LogEntryCollection" and args.maxlogentries is not None:
+                if args.maxlogentries < 0:
+                    args.maxlogentries = 0
+                if "Members@odata.nextLink" in save_dict:
+                    save_dict.pop( "Members@odata.nextLink" )
+                if "Members" in save_dict:
+                    if isinstance( save_dict["Members"], list ):
+                        for i in range( 0, len( save_dict["Members"] ) - args.maxlogentries ):
+                            save_dict["Members"].pop()
+                        save_dict["Members@odata.count"] = len( save_dict["Members"] )
+
+            # Add the copyright statement if needed
             if args.Copyright:
                 save_dict["@Redfish.Copyright"] = args.Copyright
-            with open( index_path, "w", encoding = "utf-8") as file:
+
+            with open( index_path, "w", encoding = "utf-8" ) as file:
                 json.dump( save_dict, file, indent = 4, separators = ( ",", ": " ) )
     except Exception as err:
         print( "ERROR: Could not save '{}': {}".format( uri, err ) )
@@ -214,7 +230,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
         if is_csdl:
             scan_csdl( redfish_obj, args, response_times, resource.text )
         else:
-            scan_object( redfish_obj, args, response_times, resource.dict )
+            scan_object( redfish_obj, args, response_times, save_dict )
     except Exception as err:
         print( "ERROR: Could not scan '{}': {}".format( uri, err ) )
         return
