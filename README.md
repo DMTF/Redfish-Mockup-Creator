@@ -51,6 +51,9 @@ optional arguments:
   --quiet, -q           Quiet mode; progress messages suppressed
   --trace, -trace       Enable tracing; creates the file rf-mockup-create.log
                         to capture Redfish traces with the service
+  --maxlogentries MAXLOGENTRIES, -maxlogentries MAXLOGENTRIES
+                        The maximum number of log entries to collect in each
+                        log service
 ```
 
 ### Description
