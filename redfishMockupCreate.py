@@ -22,7 +22,7 @@ import logging
 from redfish import redfish_logger
 
 # Version info
-tool_version = "1.1.1"
+tool_version = "1.1.2"
 
 def main():
     """

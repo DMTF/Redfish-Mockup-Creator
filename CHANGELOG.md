@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.2] - 2021-09-17
+- Added --trace option to provide Redfish operation tracing between the tool and the service in the output directory
+- Added --maxlogentries option to limit the number of log entries obtained from each log service discovered
+
 ## [1.1.1] - 2021-04-23
 - Added capturing of response information when a resource cannot be parsed
 
