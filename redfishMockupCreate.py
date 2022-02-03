@@ -19,10 +19,18 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 import logging
+import copy
+import gc
 from redfish import redfish_logger
 
 # Version info
 tool_version = "1.1.2"
+
+# For Windows, there are restricted characters in folder names that could be used in URIs
+disallowed_folder_characters_win = [ ":", "*", "?", "\"", "<", ">", "|" ]
+folder_name_fix = False
+if sys.platform == "win32" or sys.platform == "cygwin":
+    folder_name_fix = True
 
 def main():
     """
@@ -144,7 +152,11 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
 
     # Set up the output folder
     try:
-        path = os.path.join( args.Dir, uri[1:] )
+        path = uri[1:]
+        if folder_name_fix:
+            for character in disallowed_folder_characters_win:
+                path = path.replace( character, "_" )
+        path = os.path.join( args.Dir, path )
         if not os.path.isdir( path ):
             # Does not exist; make the directory
             os.makedirs( path )
@@ -193,12 +205,24 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
                             save_dict["Members"].pop()
                         save_dict["Members@odata.count"] = len( save_dict["Members"] )
 
+            # The saved copy might contain URI fixes and other changes that aren't reflective of the service, but are
+            # needed to ensure compatibility with the system creating the mockup
+            scan_dict = copy.deepcopy( save_dict )
+
             # Add the copyright statement if needed
             if args.Copyright:
                 save_dict["@Redfish.Copyright"] = args.Copyright
 
+            # Update the payload's URIs if they need to be corrected based on allowable folder names for the system
+            if folder_name_fix:
+                fix_uris( save_dict )
+
             with open( index_path, "w", encoding = "utf-8" ) as file:
                 json.dump( save_dict, file, indent = 4, separators = ( ",", ": " ) )
+
+            # Deep copies of all payloads gets expensive; force garbage collection to avoid stack overflows
+            del save_dict
+            gc.collect()
     except Exception as err:
         print( "ERROR: Could not save '{}': {}".format( uri, err ) )
         print( "Attempting to save response data in error.txt..." )
@@ -237,7 +261,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
         if is_csdl:
             scan_csdl( redfish_obj, args, response_times, resource.text )
         else:
-            scan_object( redfish_obj, args, response_times, save_dict )
+            scan_object( redfish_obj, args, response_times, scan_dict )
     except Exception as err:
         print( "ERROR: Could not scan '{}': {}".format( uri, err ) )
         return
@@ -298,6 +322,32 @@ def scan_csdl( redfish_obj, args, response_times, csdl ):
                         print( "Warning: Found invalid Uri attribute '{}'; attributes are case sensitive!".format( tag ) )
                     # Scan the reference
                     scan_resource( redfish_obj, args, response_times, uri, is_csdl = True )
+
+def fix_uris( payload ):
+    """
+    Updates URIs in a payload to ensure they do not conflict with local system folder name rules
+
+    Args:
+        payload: The payload to update
+    """
+
+    for item in payload:
+        # If the payload is a dictionary, inspect the properties found
+        if isinstance( payload, dict ):
+            # If the item is a reference, go to the resource
+            if item == "@odata.id" or item == "Uri" or item == "Members@odata.nextLink":
+                if isinstance( payload[item], str ):
+                    for character in disallowed_folder_characters_win:
+                        payload[item] = payload[item].replace( character, "_" )
+
+            # If the item is an object or array, scan one level deeper
+            elif isinstance( payload[item], dict ) or isinstance( payload[item], list ):
+                fix_uris( payload[item] )
+
+        # If the object is a list, see if the member needs to be scanned
+        elif isinstance( payload, list ):
+            if isinstance( item, dict ) or isinstance( item, list ):
+                fix_uris( item )
 
 if __name__ == "__main__":
     sys.exit( main() )
