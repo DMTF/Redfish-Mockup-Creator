@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.3] - 2022-02-05
+- Added detection for Windows to rename directories to not use characters that conflict with folder name limitations
+
 ## [1.1.2] - 2021-09-17
 - Added --trace option to provide Redfish operation tracing between the tool and the service in the output directory
 - Added --maxlogentries option to limit the number of log entries obtained from each log service discovered
