@@ -281,7 +281,7 @@ def scan_object( redfish_obj, args, response_times, object ):
         # If the object is a dictionary, inspect the properties found
         if isinstance( object, dict ):
             # If the item is a reference, go to the resource
-            if item == "@odata.id" or item == "Uri" or item == "Members@odata.nextLink":
+            if item == "@odata.id" or item == "Uri" or item == "Members@odata.nextLink" or item == "@Redfish.ActionInfo":
                 if isinstance( object[item], str ):
                     if object[item].startswith( "/" ) and "#" not in object[item]:
                         scan_resource( redfish_obj, args, response_times, object[item] )
