@@ -3,10 +3,9 @@
 ## [1.1.8] - 2022-05-13
 - Version change only
 
-## [1.1.6] - 2022-05-13
-- Version update only
 ## [1.1.4] - 2022-05-13
 - Add '@Redfish.ActionInfo' as a search item when crawling the service
+
 ## [1.1.3] - 2022-02-05
 - Added detection for Windows to rename directories to not use characters that conflict with folder name limitations
 
