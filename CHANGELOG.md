@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.8] - 2022-05-13
+- Version change only
+
 ## [1.1.6] - 2022-05-13
 - Version update only
 ## [1.1.4] - 2022-05-13

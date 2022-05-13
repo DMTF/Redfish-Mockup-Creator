@@ -24,7 +24,7 @@ import gc
 from redfish import redfish_logger
 
 # Version info
-tool_version = "1.1.6"
+tool_version = "1.1.8"
 
 # For Windows, there are restricted characters in folder names that could be used in URIs
 disallowed_folder_characters_win = [ ":", "*", "?", "\"", "<", ">", "|" ]
