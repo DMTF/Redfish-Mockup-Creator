@@ -1,5 +1,7 @@
 # Change Log
 
+## [1.1.5] - 2022-05-13
+- Version update only
 ## [1.1.4] - 2022-05-13
 - Add '@Redfish.ActionInfo' as a search item when crawling the service
 ## [1.1.3] - 2022-02-05
