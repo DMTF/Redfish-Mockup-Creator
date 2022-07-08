@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.9] - 2022-07-08
+- Made change to allow for the scheme to be included in the 'rhost' argument
+
 ## [1.1.8] - 2022-05-13
 - Version change only
 
