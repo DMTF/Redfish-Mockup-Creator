@@ -38,7 +38,7 @@ def main():
     """
 
     # Get the input arguments
-    argget = argparse.ArgumentParser( description = "A tool to walk a Redfish a service and create a mockup from all resources" )
+    argget = argparse.ArgumentParser( description = "A tool to walk a Redfish service and create a mockup from all resources" )
     argget.add_argument( "--user", "-u", type = str, required = True, help = "The user name for authentication" )
     argget.add_argument( "--password", "-p",  type = str, required = True, help = "The password for authentication" )
     argget.add_argument( "--rhost", "-r", type = str, required = True, help = "The IP address (and port) of the Redfish service" )

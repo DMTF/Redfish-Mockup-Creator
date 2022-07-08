@@ -27,7 +27,7 @@ usage: redfishMockupCreate.py [-h] --user USER --password PASSWORD --rhost
                               [--Copyright COPYRIGHT]
                               [--description DESCRIPTION] [--quiet]
 
-A tool to walk a Redfish a service and create a mockup from all resources
+A tool to walk a Redfish service and create a mockup from all resources
 
 required arguments:
   --user USER, -u USER  The user name for authentication
