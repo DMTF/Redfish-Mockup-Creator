@@ -38,15 +38,15 @@ def main():
     """
 
     # Get the input arguments
-    argget = argparse.ArgumentParser( description = "A tool to walk a Redfish a service and create a mockup from all resources" )
+    argget = argparse.ArgumentParser( description = "A tool to walk a Redfish service and create a mockup from all resources" )
     argget.add_argument( "--user", "-u", type = str, required = True, help = "The user name for authentication" )
     argget.add_argument( "--password", "-p",  type = str, required = True, help = "The password for authentication" )
     argget.add_argument( "--rhost", "-r", type = str, required = True, help = "The IP address (and port) of the Redfish service" )
+    argget.add_argument( "--Dir", "-D", type = str, help = "Output directory for the mockup; defaults to 'rfMockUpDfltDir'", default = "rfMockUpDfltDir" )
     argget.add_argument( "--Secure", "-S", action = "store_true", help = "Use HTTPS for all operations" )
     argget.add_argument( "--Auth", "-A", type = str, help = "Authentication mode", choices = [ "None", "Basic", "Session" ], default = "Session" )
     argget.add_argument( "--Headers", "-H", action = "store_true", help = "Captures the response headers in the mockup" )
     argget.add_argument( "--Time", "-T", action = "store_true", help = "Capture the time of each GET in the mockup" )
-    argget.add_argument( "--Dir", "-D", type = str, help = "Output directory for the mockup", default = "rfMockUpDfltDir" )
     argget.add_argument( "--Copyright", "-C", type = str, help = "Copyright string to add to each resource", default = None )
     argget.add_argument( "--description", "-d", type = str, help = "Mockup description to add to the output readme file", default = "" )
     argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
@@ -63,10 +63,11 @@ def main():
 
     # Build the base URL for the service
     # More backwards compatibility
-    if args.Secure:
-        args.rhost = "https://{}".format( args.rhost )
-    else:
-        args.rhost = "http://{}".format( args.rhost )
+    if "://" not in args.rhost:
+        if args.Secure:
+            args.rhost = "https://{}".format( args.rhost )
+        else:
+            args.rhost = "http://{}".format( args.rhost )
 
     # Set up the output
     if not os.path.isdir( args.Dir ):
