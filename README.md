@@ -38,25 +38,27 @@ required arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --Dir DIR, -D DIR     Output directory for the mockup; defaults to
+                        'rfMockUpDfltDir'
   --Secure, -S          Use HTTPS for all operations
   --Auth {None,Basic,Session}, -A {None,Basic,Session}
                         Authentication mode
   --Headers, -H         Captures the response headers in the mockup
   --Time, -T            Capture the time of each GET in the mockup
-  --Dir DIR, -D DIR     Output directory for the mockup
   --Copyright COPYRIGHT, -C COPYRIGHT
                         Copyright string to add to each resource
   --description DESCRIPTION, -d DESCRIPTION
                         Mockup description to add to the output readme file
   --quiet, -q           Quiet mode; progress messages suppressed
   --trace, -trace       Enable tracing; creates the file rf-mockup-create.log
-                        to capture Redfish traces with the service
+                        in the output directory to capture Redfish traces with
+                        the service
   --maxlogentries MAXLOGENTRIES, -maxlogentries MAXLOGENTRIES
                         The maximum number of log entries to collect in each
                         log service
 ```
 
-### Description
+Example: `python redfishMockupCreate.py -u root -p root -r 192.168.1.100 -S -D /output`
 
 The tool will log into the service specified by the *rhost* argument using the credentials provided by the *user* and *password* arguments.
 It will then walk the service to find all resources and place each resource in directory specified by the *Dir* argument.
@@ -65,13 +67,7 @@ For every resource found, it will create an "index.json" file in the output dire
 If the *Headers* argument is specified, it will save the response headers for each resource in a "headers.json" file.
 If the *Time* argument is specified, it will save the time elapsed for each resource in a "time.json" file. 
 
-### Native system example
-
-```bash
-python redfishMockupCreate.py -u root -p root -r 192.168.1.100 -S -D /home/user/redfish-mockup
-```
-
-### Docker container example
+## Docker container example
 
 To run as a Docker container, use one of these actions to pull or build the container:
 
