@@ -56,6 +56,10 @@ optional arguments:
   --maxlogentries MAXLOGENTRIES, -maxlogentries MAXLOGENTRIES
                         The maximum number of log entries to collect in each
                         log service
+  --forcefolderrename, -forcefolderrename
+                        Indicates if URIs containing characters that are
+                        disallowed in Windows folder names are renamed to
+                        replace the characters with underscores
 ```
 
 Example: `python redfishMockupCreate.py -u root -p root -r 192.168.1.100 -S -D /output`
@@ -66,6 +70,11 @@ If *Dir* is not specified, the output will be "rfMockUpDfltDir".
 For every resource found, it will create an "index.json" file in the output directory.
 If the *Headers* argument is specified, it will save the response headers for each resource in a "headers.json" file.
 If the *Time* argument is specified, it will save the time elapsed for each resource in a "time.json" file. 
+
+Some implementations use URIs that contain characters that are disallowed in Windows folder names.
+The tool attempts to discover the OS to determine if these characters should be replaced by underscore characters.
+However, in some situations, such as a Docker container running under Windows, it's not possible for the tool to detect this condition.
+The *forcefolderrename* argument can be used in these cases to perform this replacement regardless of the detected OS.
 
 ## Docker container example
 
