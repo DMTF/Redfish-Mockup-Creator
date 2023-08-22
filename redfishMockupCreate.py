@@ -52,6 +52,7 @@ def main():
     argget.add_argument( "--quiet", "-q", action = "store_true", help = "Quiet mode; progress messages suppressed" )
     argget.add_argument( "--trace", "-trace", action = "store_true", help = "Enable tracing; creates the file rf-mockup-create.log in the output directory to capture Redfish traces with the service" )
     argget.add_argument( "--maxlogentries", "-maxlogentries", type = int, help = "The maximum number of log entries to collect in each log service" )
+    argget.add_argument( "--forcefolderrename", "-forcefolderrename", action = "store_true", help = "Indicates if URIs containing characters that are disallowed in Windows folder names are renamed to replace the characters with underscores" )
     args, unknown = argget.parse_known_args()
 
     # Convert the authentication method to something usable with the Redfish library
@@ -154,7 +155,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
     # Set up the output folder
     try:
         path = uri[1:]
-        if folder_name_fix:
+        if folder_name_fix or args.forcefolderrename:
             for character in disallowed_folder_characters_win:
                 path = path.replace( character, "_" )
         path = os.path.join( args.Dir, path )
@@ -215,7 +216,7 @@ def scan_resource( redfish_obj, args, response_times, uri, is_csdl = False ):
                 save_dict["@Redfish.Copyright"] = args.Copyright
 
             # Update the payload's URIs if they need to be corrected based on allowable folder names for the system
-            if folder_name_fix:
+            if folder_name_fix or args.forcefolderrename:
                 fix_uris( save_dict )
 
             with open( index_path, "w", encoding = "utf-8" ) as file:
