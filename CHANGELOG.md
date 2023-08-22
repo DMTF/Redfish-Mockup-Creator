@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.0] - 2023-08-22
+- Added 'forcefolderrename' argument to replace characters that are disallowed in Windows folder names with underscores
+
 ## [1.1.9] - 2022-07-08
 - Made change to allow for the scheme to be included in the 'rhost' argument
 
