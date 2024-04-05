@@ -84,7 +84,7 @@ To run as a Docker container, use one of these actions to pull or build the cont
 * Build a container from GitHub:
 
     ```bash
-    docker build -t dmtf/redfish-mockup-creator:latest https://github.com/DMTF/Redfish-Mockup-Creator.git
+    docker build -t dmtf/redfish-mockup-creator:latest https://github.com/DMTF/Redfish-Mockup-Creator.git#main
     ```
 
 This command runs the container with a specified mockup, where `<path-to-mockup>` is the path to the mockup directory:
