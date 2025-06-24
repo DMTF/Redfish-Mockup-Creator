@@ -67,7 +67,9 @@ Example: `python redfishMockupCreate.py -u root -p root -r 192.168.1.100 -S -D /
 The tool will log into the service specified by the *rhost* argument using the credentials provided by the *user* and *password* arguments.
 It will then walk the service to find all resources and place each resource in directory specified by the *Dir* argument.
 If *Dir* is not specified, the output will be "rfMockUpDfltDir".
-For every resource found, it will create an "index.json" file in the output directory.
+For every CSDL file discovered on the service, it will create an "index.xml" file in the output directory.
+For every JSON response from a URI, such as resources or error responses, it will create an "index.json" file in the output directory.
+For every non-JSON response from a URI, it will create an "error.txt" file in the output directory.
 If the *Headers* argument is specified, it will save the response headers for each resource in a "headers.json" file.
 If the *Time* argument is specified, it will save the time elapsed for each resource in a "time.json" file. 
 
