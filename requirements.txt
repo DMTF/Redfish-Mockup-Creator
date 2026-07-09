@@ -1,1 +1,2 @@
 redfish>=2.1.0
+urllib3[zstd]>=2.6.0
